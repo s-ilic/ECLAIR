@@ -1,24 +1,18 @@
 import os
 import sys
 #import emcee
-import XYZ_parser
+import ECLAIR_parser
 import numpy as np
 
 if __name__ == "__main__":
 
     ### Parse the inputs
     ini_fname = sys.argv[1]
-    ini = XYZ_parser.parse_ini_file(ini_fname)
-
-    # ini['debug']
-    # test_mode = False
-    if len(sys.argv)/ > 2:
-        # test_mode = True
-
+    ini = ECLAIR_parser.parse_ini_file(ini_fname)
 
     ### If new chain is started, create a copy of ini file in output folder
     if not ini['continue_chain']:
-        XYZ_parser.copy_ini_file(ini_fname, ini)
+        ECLAIR_parser.copy_ini_file(ini_fname, ini)
 
 
     ### Print the output path root
@@ -32,7 +26,7 @@ if __name__ == "__main__":
 
     ### Import requested likelihoods
     # Grab likelihoods folder path (folder should be in same directory as this script)
-    path_to_likes = os.path.dirname(os.path.realpath(sys.argv[0])) + '/XYZ_likelihoods'
+    path_to_likes = os.path.dirname(os.path.realpath(sys.argv[0])) + '/ECLAIR_likelihoods'
     # Insert in python path
     sys.path.insert(0, path_to_likes)
     # Import and store in list all requested loglikelihoods
@@ -68,24 +62,24 @@ if __name__ == "__main__":
         lnp = 0.
         if len(ini['gauss_priors']) > 0:
             lnp = np.sum(
-                -0.5 * (p[ix_gauss_pri] - gauss_pri[:, 0])**2. 
+                -0.5 * (p[ix_gauss_pri] - gauss_pri[:, 0])**2.
                 / gauss_pri[:, 1]**2.)
 
         # Create parameters dictionnary for class and likelihoods
         class_input = ini['base_par_class'].copy()
         likes_input = ini['base_par_likes'].copy()
-        
+
         # Loop over parameters
         for i, par in enumerate(ini['var_par']):
             if par[0] == 'var_class':
                 class_input[par[1]] = p[i]
             else:
                 likes_input[par[1]] = p[i]
-        
+
         # Deal with constraints
         for cst in ini['constraints']:
             exec(cst)
-        
+
         # Deal with parameter arrays
         final_class_input = class_input.copy()
         for n in ini['array_var'].keys():
@@ -143,11 +137,11 @@ if __name__ == "__main__":
     ### Import additional modules for parallel computing if requested
     pool = None
     # Multithreading parallel computing via python-native multiprocessing module
-    if (ini['parallel'][0] == 'multiprocessing') & (not test_mode):
+    if (ini['parallel'][0] == 'multiprocessing') & (not ini['debug']):
         from multiprocessing import Pool
         pool = Pool(int(ini['parallel'][1])) # number of threads chosen by user
     # MPI parallel computing via external schwimmbad module
-    elif (ini['parallel'][0] == 'MPI') & (not test_mode):
+    elif (ini['parallel'][0] == 'MPI') & (not ini['debug']):
         from schwimmbad import MPIPool
         pool = MPIPool()
         if not pool.is_master(): # Necessary bit for MPI
@@ -164,7 +158,7 @@ if __name__ == "__main__":
         n_walkers *= len(ini['var_par'])
 
 
-    ### Randomize initial walkers positions according to "start" & "width" columns in ini file 
+    ### Randomize initial walkers positions according to "start" & "width" columns in ini file
     p0_start = [par[2] for par in ini['var_par']]
     std_start = [par[5] for par in ini['var_par']]
     p_start = emcee.utils.sample_ball(p0_start, std_start, n_walkers)
@@ -177,7 +171,7 @@ if __name__ == "__main__":
             input_p = reader.get_chain()[ini['ch_start'], :, :].copy()
             in_nw = input_p.shape[0]
             # Get parameters names from chain (from .ini file)
-            in_ini = XYZ_parser.parse_ini_file(
+            in_ini = ECLAIR_parser.parse_ini_file(
                 ini['input_fname'] + '.ini',
                 ignore_errors=True)
             in_names = [par[1] for par in in_ini['var_par']]
@@ -204,7 +198,7 @@ if __name__ == "__main__":
                 # Replace in p_start only the parameters present in input file
                 if ix != -1:
                     if ini['input_type'] == 'one_walker':
-                        p_start[n, i] = (np.random.randn() * std_start[i] 
+                        p_start[n, i] = (np.random.randn() * std_start[i]
                                         + input_p[n % in_nw, ix])
                     else:
                         p_start[n, i] = input_p[n % in_nw, ix]
@@ -216,7 +210,7 @@ if __name__ == "__main__":
     for deriv in ini['derivs']:
         blobs_dtype += [("%s" % deriv[0], float)]
     names = '  '.join([par[1] for par in ini['var_par']])
-    if test_mode:
+    if ini['debug']:
         sys.exit()
 
 
