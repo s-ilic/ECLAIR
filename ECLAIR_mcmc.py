@@ -1,6 +1,6 @@
 import os
 import sys
-#import emcee
+import emcee
 import ECLAIR_parser
 import numpy as np
 
