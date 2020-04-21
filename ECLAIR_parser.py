@@ -15,7 +15,7 @@ def parse_ini_file(fname, ignore_errors=False):
     with open(fname) as f:
         lines = f.readlines()
     out =  {}
-    error_ct = 0
+    error_ct = 0 # Error count, should stay 0
 
     ### Read all lines and options (==1st word on line)
     slines = []
@@ -30,6 +30,25 @@ def parse_ini_file(fname, ignore_errors=False):
             flines.append(line.replace('\n',''))
             options.append(sline[0])
 
+    ### Deal with debug mode
+    ct = options.count('debug_mode')
+    out['debug_mode'] = False
+    if ct == 0:
+        print('"debug_mode" not found. Assumed "No".')
+    elif ct > 1:
+        print('Multiple (%s) instances of "debug_mode" found.' % ct)
+        error_ct += 1
+    else:
+        ix = options.index('debug_mode')
+        if len(slines[ix]) != 2:
+            print('Wrong number of arguments for "debug_mode".')
+            error_ct += 1
+        elif slines[ix][1] not in ['yes', 'no']:
+            print('"debug_mode" should be "yes" or "no".')
+            error_ct += 1
+        elif slines[ix][1] == 'yes':
+            out['debug_mode'] = True
+
     ### Deal with output_root
     ct = options.count('output_root')
     if ct == 0:
@@ -37,7 +56,7 @@ def parse_ini_file(fname, ignore_errors=False):
         out['output_root'] = None
         error_ct += 1
     elif ct > 1:
-        print('%s instances of "output_root" found.' % ct)
+        print('Multiple (%s) instances of "output_root" found.' % ct)
         out['output_root'] = None
         error_ct += 1
     else:
@@ -64,7 +83,7 @@ def parse_ini_file(fname, ignore_errors=False):
     elif ('input_type' in options) & ('input_fname' in options):
         ct = options.count('input_type')
         if ct > 1:
-            print('%s instances of "input_type" found.' % ct)
+            print('Multiple (%s) instances of "input_type" found.' % ct)
             out['input_type'] = None
             error_ct += 1
         else:
@@ -102,7 +121,7 @@ def parse_ini_file(fname, ignore_errors=False):
         print('"input_fname" not found, starting with random positions.')
         out['input_fname'] = None
     elif ct > 1:
-        print('%s instances of "input_fname" found.' % ct)
+        print('Multiple (%s) instances of "input_fname" found.' % ct)
         out['input_fname'] = None
         error_ct += 1
     else:
@@ -126,7 +145,7 @@ def parse_ini_file(fname, ignore_errors=False):
         print('"continue_chain" not found.')
         error_ct += 1
     elif ct > 1:
-        print('%s instances of "continue_chain" found.' % ct)
+        print('Multiple (%s) instances of "continue_chain" found.' % ct)
         error_ct += 1
     else:
         ix = options.index('continue_chain')
@@ -149,7 +168,7 @@ def parse_ini_file(fname, ignore_errors=False):
     else:
         ct = options.count('parallel')
         if ct > 1:
-            print('%s instances of "parallel" found.' % ct)
+            print('Multiple (%s) instances of "parallel" found.' % ct)
             error_ct += 1
         else:
             ix = options.index('parallel')
@@ -179,7 +198,7 @@ def parse_ini_file(fname, ignore_errors=False):
         out['n_walkers_type'] = 'prop_to'
         out['n_walkers'] = 2
     elif ct > 1:
-        print('%s instances of "n_walkers" found.' % ct)
+        print('Multiple (%s) instances of "n_walkers" found.' % ct)
         error_ct += 1
     else:
         ix = options.index('n_walkers')
@@ -202,7 +221,7 @@ def parse_ini_file(fname, ignore_errors=False):
         print('"n_steps" not found, assuming 10000 steps.')
         out['n_steps'] = 10000
     elif ct > 2:
-        print('%s instances of "n_steps" found.' % ct)
+        print('Multiple (%s) instances of "n_steps" found.' % ct)
         error_ct += 1
     else:
         ix = options.index('n_steps')
@@ -221,7 +240,7 @@ def parse_ini_file(fname, ignore_errors=False):
         print('"thin_by" not found, assuming no thinning.')
         out['thin_by'] = 1
     elif ct > 2:
-        print('%s instances of "thin_by" found.' % ct)
+        print('Multiple (%s) instances of "thin_by" found.' % ct)
         error_ct += 1
     else:
         ix = options.index('thin_by')
@@ -240,7 +259,7 @@ def parse_ini_file(fname, ignore_errors=False):
         print('"temperature" not found, assuming temperature = 1.')
         out['temperature'] = 1
     elif ct > 2:
-        print('%s instances of "temperature" found.' % ct)
+        print('Multiple (%s) instances of "temperature" found.' % ct)
         error_ct += 1
     else:
         ix = options.index('temperature')
@@ -259,7 +278,7 @@ def parse_ini_file(fname, ignore_errors=False):
         print('"stretch" not found, assuming default stretch of 2.')
         out['stretch'] = 1
     elif ct > 2:
-        print('%s instances of "stretch" found.' % ct)
+        print('Multiple (%s) instances of "stretch" found.' % ct)
         error_ct += 1
     else:
         ix = options.index('stretch')
@@ -281,7 +300,7 @@ def parse_ini_file(fname, ignore_errors=False):
         print('"which_class" not found, assuming regular class.')
         out['which_class'] = 'classy'
     elif ct > 2:
-        print('%s instances of "which_class" found.' % ct)
+        print('Multiple (%s) instances of "which_class" found.' % ct)
         error_ct += 1
     else:
         ix = options.index('which_class')
