@@ -24,7 +24,7 @@ exec('import %s as classy' % which_class)
 
 ### Import requested likelihoods
 # Grab likelihoods folder path (folder should be in same directory as this script)
-path_to_likes = os.path.dirname(os.path.realpath(sys.argv[0])) + '/ECLAIR_likelihoods'
+path_to_likes = os.path.dirname(os.path.realpath(sys.argv[0])) + '/likelihoods'
 # Insert in python path
 sys.path.insert(0, path_to_likes)
 # Import and store in list all requested loglikelihoods
