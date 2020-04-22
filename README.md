@@ -2,7 +2,7 @@
 
 **Author: Stéphane Ilić**
 
-with feedback and suggestions from: Michael Kopp, Daniel B. Thomas, Constantinos Skordis, Tom G. Złośnik, Nadia Bolis
+with feedback and suggestions from: Michael Kopp, Louis Perenon, Daniel B. Thomas, Constantinos Skordis, Tom G. Złośnik, Nadia Bolis
 
 ## Purpose of the Code
 
@@ -60,7 +60,13 @@ which will run 10 steps of a 10-walker chain on the Hubble parameter today (`H0`
 
 ### Maximizer
 
-Description to be added soon.
+The ECLAIR suite contains a maximizer which uses a novel technique combining affine-invariant ensemble sampling with simulated annealing. The method works in the following way: the code runs an  MCMC chain with affine-invariant ensemble sampling for a number `n` of steps, with an initial MCMC temperature (by definition, a factor by which the log posterior is divided) set to 1. It then divides this temperature by a factor `f` (> 1), and resumes the chain for another `n` steps. It repeats this pattern for a number `N` of iterations. The combination of this simulated annealing (slowly "cooling" the chain) with the presence of many "walkers" in the ensemble sampling technique allows the code to converge more reliably towards the global maximum of the posterior.
+
+Running a maximization is very simple and uses the exact same type of `.ini` file as a regular MCMC run with ECLAIR, and can be done typically via the command:
+```
+python ECLAIR_maximizer.py /path/to/input_file.ini N n f
+```
+where `N`, `n` and `f` are the aforementioned quantities, to be chosen by the user. Large values of `N` and `n` combined with `f` value close to (but different than) 1 yield better results, though a compromise often need to be found in order to reach an estimate of the maximum likelihood in a reasonable amount of time.
 
 ### Chain diagnostics and plotting results
 
