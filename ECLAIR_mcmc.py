@@ -4,9 +4,11 @@ import emcee
 import ECLAIR_parser
 import numpy as np
 
-### Parse the inputs
+
+### Parse the input ini file
 ini_fname = sys.argv[1]
 ini = ECLAIR_parser.parse_ini_file(ini_fname)
+
 
 ### If new chain is started, create a copy of ini file in output folder
 if not ini['continue_chain']:
@@ -27,7 +29,7 @@ exec('import %s as classy' % which_class)
 path_to_likes = os.path.dirname(os.path.realpath(sys.argv[0])) + '/likelihoods'
 # Insert in python path
 sys.path.insert(0, path_to_likes)
-# Import and store in list all requested loglikelihoods
+# Import and store in list all requested log(likelihoods)
 likes = []
 for like_name in ini['likelihoods']:
     exec('import %s' % like_name)
@@ -103,7 +105,7 @@ def lnlike(p):
     lnls = [0.]*len(likes)
     for i, like in enumerate(likes):
         try:
-            lnls[i] = like(class_input, likes_input, class_run)
+            lnls[i] = float(like(class_input, likes_input, class_run))
         except Exception as e:
             if ini['debug_mode']:
                 print(e)
@@ -133,7 +135,7 @@ def lnlike(p):
     class_run.struct_cleanup()
     class_run.empty()
 
-    # Return log(likes*prior) / T, log(prior), log(likes), derivs
+    # Return log(likes*prior)/T, log(prior), log(likes), derivs
     res = [(sum(lnls) + lnp) / ini['temperature'], lnp] + lnls + derivs
     return tuple(res)
 
@@ -218,10 +220,11 @@ if ini['input_type'] is not None:
 
 ### Prepare some inputs for the MCMC
 blobs_dtype = [("lnprior", float)]
-blobs_dtype += [("lnl_%s" % name, float) for name in ini['likelihoods']]
+blobs_dtype += [("lnlike_%s" % name, float) for name in ini['likelihoods']]
 for deriv in ini['derivs']:
     blobs_dtype += [("%s" % deriv[0], float)]
 names = '  '.join(var_names)
+
 
 ### Initialize output file
 if ini['output_format'] == 'text':
@@ -240,7 +243,8 @@ elif ini['output_format'] == 'HDF5':
     if not ini['continue_chain']:
         backend.reset(n_walkers, n_dim)
 
-### Do the MCMC
+
+### Do the actual MCMC
 if (__name__ == "__main__") & (not ini['debug_mode']):
 
     sampler = emcee.EnsembleSampler(
@@ -273,3 +277,6 @@ if (__name__ == "__main__") & (not ini['debug_mode']):
         # Print MCMC progress
         ct += 1
         print('Current step : %s of %s' % (ct, n_steps))
+    if ini['parallel'][0] == 'MPI':
+        pool.close()
+        sys.exit()

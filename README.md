@@ -6,7 +6,7 @@ with feedback and suggestions from: Michael Kopp, Daniel B. Thomas, Constantinos
 
 ## Purpose of the Code
 
-The ECLAIR suite of codes is meant to be used as a general inference tool, allowing to sample the posterior distribution of a set of parameters corresponding to a particular physical model, under the constraint of a number of datasets/likelihoods. As such, it brings together state-of-the-art datasets (contained in the `likelihoods` directory), an efficient affine-invariant ensemble sampling algorithm (via its `emcee` Python implementation), and interfaces seamlessly to the powerful [CLASS](https://github.com/lesgourg/class_public/) Boltzmann solver or any custom modification of it. In its current iteration, ECLAIR is thus primarily aimed at cosmologists wanting to test any potential cosmological model again current data, although a generalization of the code to any type of problem is completely feasible and planned for the near future.
+The ECLAIR suite of codes is meant to be used as a general inference tool, allowing to sample the posterior distribution of a set of parameters corresponding to a particular physical model, under the constraint of a number of datasets/likelihoods. As such, it brings together state-of-the-art datasets (contained in the `likelihoods` directory), an efficient affine-invariant ensemble sampling algorithm (via its `emcee` [Python implementation](https://emcee.readthedocs.io/en/stable/)), and interfaces seamlessly to the powerful [CLASS](https://github.com/lesgourg/class_public/) Boltzmann solver or any custom modification of it. It is massively parallelizable, either by using of multiple threads on a given machine (via the standard `multiprocessing` Python module) or distributing computation with MPI. In its current iteration, ECLAIR is primarily aimed at cosmologists wanting to test any potential cosmological model again current data, although a generalization of the code to any type of problem is completely feasible and planned for the near future.
 
 The ECLAIR suite also contains a robust maximizer aimed at finding the point in parameter space corresponding to the best likelihood of any considered model, using a novel technique which combines affine-invariant ensemble sampling with [simulated annealing](https://en.wikipedia.org/wiki/Simulated_annealing) to converge reliably towards the global maximum of the posterior.
 
@@ -16,9 +16,9 @@ The suite also include a plotting script allowing to conveniently diagnose and c
 
 ### Main code
 
-The ECLAIR suite is written in Python and thus requires a working Python 2 or 3 installation. It also requires a small number of additional Python modules, namely `numpy` (for general-purpose array manipulation), `matplotlib` (for the plotting scripts), and `emcee` (for sampling). The latter also requires the `h5py` module if one wants to use the HDF5 binary data format for the MCMC outputs, but plain text outputs are also available in ECLAIR. All those packages can be installed with a simple `pip` command:
+The ECLAIR suite is written in Python and thus requires a working Python 2 or 3 installation. It also requires a small number of additional Python modules, namely `numpy` (for general-purpose array manipulation), `matplotlib` (for the plotting scripts), and `emcee` (for sampling). The latter also requires the `h5py` module if one wants to use the HDF5 binary data format for the MCMC outputs, but plain text outputs are also available in ECLAIR. If you wish to parallelize your ECLAIR run via MPI, you also need to install the `schwimmbad` module. All those packages can be installed with a simple `pip` command:
 ```
-pip install numpy matplotlib emcee h5py
+pip install numpy matplotlib emcee h5py schwimmbad
 ```
 
 The installation of the suite itself simply requires cloning the present git repository:
@@ -62,9 +62,9 @@ which will run 10 steps of a 10-walker chain on the Hubble parameter today (`H0`
 
 Description to be added soon.
 
-### Plotting results
+### Chain diagnostics and plotting results
 
-Description to be added soon.
+Detailed description to be added soon.
 
 ## Developing the code
 
