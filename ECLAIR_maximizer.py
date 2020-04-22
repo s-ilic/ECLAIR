@@ -181,7 +181,7 @@ if ini['input_type'] == 'HDF5_chain':
             ini['input_fname'] + '.ini',
             ignore_errors=True)
         in_names = [par[1] for par in in_ini['var_par']]
-elif ini['input_type'] == 'txt_chain':
+elif ini['input_type'] == 'text_chain':
     # Get parameters names and number of walkers from chain (from .ini file)
     in_ini = ECLAIR_parser.parse_ini_file(
         ini['input_fname'] + '.ini',
@@ -287,7 +287,10 @@ if (__name__ == "__main__") & (not ini['debug_mode']):
                         ))
                     )
             ct += 1
-            print('> Current step : %s of %s, temperature : %s' % (ct, n_steps, current_temp))
+            print('Current :')
+            print('> temperature step : %s of %s' % (i + 1, n_T))
+            print('> MCMC step : %s of %s' % (ct, n_step_each_T))
+            print('> temperature : %s' % current_temp)
             if ct >= n_step_each_T:
                 pos, lnl, blob, dum = result
                 current_temp /= fact_T

@@ -161,10 +161,10 @@ def parse_ini_file(fname, ignore_errors=False):
             print('Wrong argument type for "input_fname".')
             out['input_fname'] = None
             error_ct += 1
-        elif out['input_type'] == 'chain':
-            out['input_fname'] = slines[ix][1][:-3]
+        elif out['input_type'] == 'text_chain':
+            out['input_fname'] = slines[ix][1][:-4]
         else:
-            out['input_fname'] = slines[ix][1]
+            out['input_fname'] = slines[ix][1][:-3]
 
     ### Deal with continue_chain
     ct = options.count('continue_chain')
