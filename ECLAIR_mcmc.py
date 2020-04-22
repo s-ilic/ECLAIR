@@ -217,7 +217,7 @@ if ini['input_type'] is not None:
 
 
 ### Prepare some inputs for the MCMC
-blobs_dtype = [("log_prior", float)]
+blobs_dtype = [("lnprior", float)]
 blobs_dtype += [("lnl_%s" % name, float) for name in ini['likelihoods']]
 for deriv in ini['derivs']:
     blobs_dtype += [("%s" % deriv[0], float)]
@@ -232,7 +232,8 @@ if ini['output_format'] == 'text':
                 "# 0:walker_id  1:lnprob  " +
                 '  '.join(["%s:%s" % (i + 2, n) for i, n in enumerate(var_names)]) +
                 '  ' +
-                '  '.join(["%s(d):%s" % (i + len(var_names) + 2, deriv[0]) for i, n in enumerate(ini['derivs'])])
+                '  '.join(["%s(d):%s" % (i + len(var_names) + 2, b[0]) for i, b in enumerate(blobs_dtype)]) +
+                '\n'
             )
 elif ini['output_format'] == 'HDF5':
     backend = emcee.backends.HDFBackend(ini['output_root'] + '.h5')

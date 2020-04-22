@@ -487,6 +487,8 @@ def parse_ini_file(fname, ignore_errors=False):
         # Warn about unknown options
         else:
             known_other_options = [
+                'debug_mode',
+                'output_format',
                 'output_root',
                 'input_fname',
                 'input_type',
