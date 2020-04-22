@@ -1,4 +1,5 @@
 import numpy as np
+from os.path import isfile
 
 
 def is_number(s):
@@ -34,7 +35,7 @@ def parse_ini_file(fname, ignore_errors=False):
     ct = options.count('debug_mode')
     out['debug_mode'] = False
     if ct == 0:
-        print('"debug_mode" not found. Assumed "No".')
+        print('"debug_mode" not found. Assumed "no".')
     elif ct > 1:
         print('Multiple (%s) instances of "debug_mode" found.' % ct)
         error_ct += 1
@@ -48,6 +49,32 @@ def parse_ini_file(fname, ignore_errors=False):
             error_ct += 1
         elif slines[ix][1] == 'yes':
             out['debug_mode'] = True
+
+    ### Deal with output format
+    ct = options.count('output_format')
+    out['output_format'] = 'text'
+    suffix = '.txt'
+    if ct == 0:
+        print('"output_format" not found. Assumed "text".')
+    elif ct > 1:
+        print('Multiple (%s) instances of "output_format" found.' % ct)
+        error_ct += 1
+    else:
+        ix = options.index('output_format')
+        if len(slines[ix]) != 2:
+            print('Wrong number of arguments for "output_format".')
+            error_ct += 1
+        elif slines[ix][1] not in ['text', 'HDF5']:
+            print('"output_format" should be "text" or "HDF5".')
+            error_ct += 1
+        elif slines[ix][1] == 'HDF5':
+            try:
+                import h5py
+            except:
+                print('You need to install the "h5py" module in order to use the HDF5 file format.')
+                error_ct += 1
+            out['output_format'] = 'HDF5'
+            suffix = '.h5'
 
     ### Deal with output_root
     ct = options.count('output_root')
@@ -92,12 +119,12 @@ def parse_ini_file(fname, ignore_errors=False):
                 print('Wrong number of arguments for "input_type".')
                 out['input_type'] = None
                 error_ct += 1
-            elif slines[ix][1] not in ['chain', 'one_walker', 'many_walkers']:
+            elif slines[ix][1] not in ['text_chain', 'HDF5_chain', 'walkers']:
                 print('Unrecognizd argument for "input_type" : %s.' % slines[ix][1])
                 out['input_type'] = None
                 error_ct += 1
-            elif slines[ix][1] == 'chain':
-                out['input_type'] = 'chain'
+            elif 'chain' in slines[ix][1]:
+                out['input_type'] = slines[ix][1]
                 if len(slines[ix]) == 2:
                    out['ch_start'] = -1
                 elif not is_number(slines[ix][2]):
@@ -141,8 +168,9 @@ def parse_ini_file(fname, ignore_errors=False):
 
     ### Deal with continue_chain
     ct = options.count('continue_chain')
+    out['continue_chain'] = False
     if ct == 0:
-        print('"continue_chain" not found.')
+        print('"continue_chain" not found. Assumed "no"')
         error_ct += 1
     elif ct > 1:
         print('Multiple (%s) instances of "continue_chain" found.' % ct)
@@ -155,11 +183,16 @@ def parse_ini_file(fname, ignore_errors=False):
         elif slines[ix][1] not in ['yes', 'no']:
             print('Wrong argument for "continue_chain" : %s.' % slines[ix][1])
             error_ct += 1
-        else:
-            if slines[ix][1] == 'yes':
-                out['continue_chain'] = True
+        elif slines[ix][1] == 'yes':
+            if not isfile(out['output_root']+suffix):
+                print('The chain you want to continue from (%s) does not exist.' % (out['output_root']+suffix))
+                error_ct += 1
             else:
-                out['continue_chain'] = False
+                out['continue_chain'] = True
+        elif isfile(out['output_root']+suffix):
+            print('The output chain (%s) already exists.' % (out['output_root']+suffix))
+            error_ct += 1
+
 
     ### Deal with parallel
     if 'parallel' not in options:

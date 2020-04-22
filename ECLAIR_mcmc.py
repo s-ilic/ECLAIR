@@ -169,7 +169,7 @@ p_start = emcee.utils.sample_ball(p0_start, std_start, n_walkers)
 
 
 ### Read input file if provided and modify initial positions accordingly
-if ini['input_type'] == 'chain':
+if ini['input_type'] == 'HDF5_chain':
     with emcee.backends.HDFBackend(ini['input_fname'] + '.h5', read_only=True) as reader:
         # Get requested sample from chain
         input_p = reader.get_chain()[ini['ch_start'], :, :].copy()
@@ -179,7 +179,19 @@ if ini['input_type'] == 'chain':
             ini['input_fname'] + '.ini',
             ignore_errors=True)
         in_names = [par[1] for par in in_ini['var_par']]
-elif (ini['input_type'] == 'one_walker') | (ini['input_type'] == 'many_walkers'):
+elif ini['input_type'] == 'txt_chain':
+    # Get parameters names and number of walkers from chain (from .ini file)
+    in_ini = ECLAIR_parser.parse_ini_file(
+        ini['input_fname'] + '.ini',
+        ignore_errors=True)
+    in_names = [par[1] for par in in_ini['var_par']]
+    in_nw = in_ini['n_walkers']
+    if in_ini['n_walkers_type'] == 'prop_to':
+        in_nw *= len(in_ini['var_par'])
+    # Get requested sample from chain
+    input_p = np.loadtxt(ini['input_fname'] + '.txt')[:, 2:len(in_names)+2]
+    input_p = input_p.reshape(-1, in_nw, len(in_names))[ini['ch_start'], :, :]
+elif ini['input_type'] == 'walkers':
     # Get input walkers positions from file and their number
     input_p = np.loadtxt(ini['input_fname'])
     in_nw = input_p.shape[0]
@@ -201,10 +213,6 @@ if ini['input_type'] is not None:
         for i, ix in enumerate(ix_in_names):
             # Replace in p_start only the parameters present in input file
             if ix != -1:
-                if ini['input_type'] == 'one_walker':
-                    p_start[n, i] = (np.random.randn() * std_start[i]
-                                    + input_p[n % in_nw, ix])
-                else:
                     p_start[n, i] = input_p[n % in_nw, ix]
 
 
@@ -213,13 +221,25 @@ blobs_dtype = [("log_prior", float)]
 blobs_dtype += [("lnl_%s" % name, float) for name in ini['likelihoods']]
 for deriv in ini['derivs']:
     blobs_dtype += [("%s" % deriv[0], float)]
-names = '  '.join([par[1] for par in ini['var_par']])
+names = '  '.join(var_names)
+
+### Initialize output file
+if ini['output_format'] == 'text':
+    backend = None
+    if not ini['continue_chain']:
+        with open(ini['output_root'] + '.txt', 'w') as output_file:
+            output_file.write(
+                "# 0:walker_id  1:lnprob  " +
+                '  '.join(["%s:%s" % (i + 2, n) for i, n in enumerate(var_names)]) +
+                '  ' +
+                '  '.join(["%s(d):%s" % (i + len(var_names) + 2, deriv[0]) for i, n in enumerate(ini['derivs'])])
+            )
+elif ini['output_format'] == 'HDF5':
+    backend = emcee.backends.HDFBackend(ini['output_root'] + '.h5')
+    if not ini['continue_chain']:
+        backend.reset(n_walkers, n_dim)
 
 ### Do the MCMC
-backend = emcee.backends.HDFBackend(ini['output_root'] + '.h5')
-if not ini['continue_chain']:
-    backend.reset(n_walkers, n_dim)
-
 if (__name__ == "__main__") & (not ini['debug_mode']):
 
     sampler = emcee.EnsembleSampler(
@@ -237,6 +257,18 @@ if (__name__ == "__main__") & (not ini['debug_mode']):
         np.savetxt(ini['output_root'] + '.input',
                    np.hstack((result.coords, result.log_prob[:, None])),
                    header=names + '  log_prob')
+        # If not using the HDF5 format, save current state in plain text
+        if ini['output_format'] == 'text':
+            with open(ini['output_root'] + '.txt', 'a') as output_file:
+                np.savetxt(
+                    output_file,
+                    np.hstack((
+                        np.arange(n_walkers)[:, None],
+                        result.log_prob[:, None],
+                        result.coords,
+                        result.blobs.view(dtype=np.float64).reshape(n_walkers, -1),
+                    ))
+                )
         # Print MCMC progress
         ct += 1
         print('Current step : %s of %s' % (ct, n_steps))
