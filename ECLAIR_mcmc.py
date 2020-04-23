@@ -244,6 +244,7 @@ elif ini['output_format'] == 'HDF5':
     backend = emcee.backends.HDFBackend(ini['output_root'] + '.h5')
     if not ini['continue_chain']:
         backend.reset(n_walkers, n_dim)
+    open(ini['output_root'] + '.lock', 'w').close() # creates empty lock file
 
 
 ### Do the actual MCMC
@@ -279,6 +280,8 @@ if (__name__ == "__main__") & (not ini['debug_mode']):
         # Print MCMC progress
         ct += 1
         print('Current step : %s of %s' % (ct, n_steps))
+    if ini['output_format'] == 'HDF5':
+        os.remove(ini['output_root'] + '.lock') # remove lock file
     if ini['parallel'][0] == 'MPI':
         pool.close()
         sys.exit()
