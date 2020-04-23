@@ -16,7 +16,9 @@ if not ini['continue_chain']:
 
 
 ### Print the output path root
-print('Starting MCMC in %s' % ini['output_root'])
+print('#'*(25+len(ini['output_root'])))
+print('### Starting MCMC in %s ###' % ini['output_root'])
+print('#'*(25+len(ini['output_root'])))
 
 
 ### Import requested variant of class python wrapper

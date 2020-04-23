@@ -562,8 +562,8 @@ def parse_ini_file(fname, ignore_errors=False):
             out['drv_gauss_priors'].append(out['gauss_priors'].pop(i))
 
     ### Raise error if any problem detected, else return final dictionary
-    # str_warn += '################\n'
-    # str_err += '################\n'
+    if error_ct == 0:
+        str_err += 'None.\n'
     print(str_warn)
     print(str_err)
     if ignore_errors:
