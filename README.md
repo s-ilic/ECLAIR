@@ -6,71 +6,11 @@ with feedback and suggestions from: Michael Kopp, Louis Perenon, Daniel B. Thoma
 
 ## Purpose of the Code
 
-The ECLAIR suite of codes is meant to be used as a general inference tool, allowing to sample the posterior distribution of a set of parameters corresponding to a particular physical model, under the constraint of a number of datasets/likelihoods. As such, it brings together state-of-the-art datasets (contained in the `likelihoods` directory), an efficient affine-invariant ensemble sampling algorithm (via its `emcee` [Python implementation](https://emcee.readthedocs.io/en/stable/)), and interfaces seamlessly to the powerful [CLASS](https://github.com/lesgourg/class_public/) Boltzmann solver or any custom modification of it. It is massively parallelizable, either by using of multiple threads on a given machine (via the standard `multiprocessing` Python module) or distributing computation with MPI. In its current iteration, ECLAIR is primarily aimed at cosmologists wanting to test any potential cosmological model again current data, although a generalization of the code to any type of problem is completely feasible and planned for the near future.
+The ECLAIR suite of codes is meant to be used as a general inference tool, allowing to sample via MCMC techniques the posterior distribution of a set of parameters corresponding to a particular physical model, under the constraint of a number of datasets/likelihoods. It also contains a robust maximizer aimed at finding the point in parameter space corresponding to the best likelihood of any considered model.The suite also include a plotting script allowing to conveniently diagnose and check the convergence of a chain, as well as produce summary statistics on the parameters of interest.
 
-The ECLAIR suite also contains a robust maximizer aimed at finding the point in parameter space corresponding to the best likelihood of any considered model, using a novel technique which combines affine-invariant ensemble sampling with [simulated annealing](https://en.wikipedia.org/wiki/Simulated_annealing) to converge reliably towards the global maximum of the posterior.
+## Prerequisites, installation, and usage
 
-The suite also include a plotting script allowing to conveniently diagnose and check the convergence of a chain, as well as produce summary statistics on the parameters of interest.
-
-## Prerequisites and installation
-
-### Main code
-
-The ECLAIR suite is written in Python and thus requires a working Python 2 or 3 installation. It also requires a small number of additional Python modules, namely `numpy` (for general-purpose array manipulation), `matplotlib` (for the plotting scripts), and `emcee` (for sampling). The latter also requires the `h5py` module if one wants to use the HDF5 binary data format for the MCMC outputs, but plain text outputs are also available in ECLAIR. If you wish to parallelize your ECLAIR run via MPI, you also need to install the `schwimmbad` module. All those packages can be installed with a simple `pip` command:
-```
-pip install numpy matplotlib emcee h5py schwimmbad
-```
-
-The installation of the suite itself simply requires cloning the present git repository:
-```
-git clone https://github.com/s-ilic/ECLAIR.git
-```
-The resulting folder contains:
-  * a `likelihoods` folder containing a number of sub-folders, each corresponding to a single dataset/likelihood in the form of a Python module;
-  * an `inputs` folder containing a detailed `template.ini` configuration file and short example (see Usage section);
-  * `ECLAIR_mcmc.py`, the main script for running Monte Carlo Markov chains;
-  * `ECLAIR_maximize.py`, a script for running a search for a global likelihood maximum;
-  * `ECLAIR_plots.py`, a script for analyzing and plotting the content of the ECLAIR output files;
-  * `ECLAIR_parser.py`, a parser module for `.ini` files, used by the three aforementioned scripts.
-
-### CLASS
-
-Currently, the Boltzman code CLASS is the only "theoretical engine" interfaced to ECLAIR. Its installation is thus required to run the suite, and especially its associated CLASS Python wrapper `classy`. Please refer to the CLASS code [webpage](http://class-code.net) and [GitHub repository](https://github.com/lesgourg/class_public) for detailed installation instructions. Note however that one is not limited to the "vanilla" version of CLASS: ECLAIR is compatible with any variant or modification based on CLASS, as long as the name of the corresponding Python wrapper is correctly passed to the `which_class` option in the ECLAIR `.ini` file.
-
-### Planck likelihoods
-
-Using the bundled Planck 2015 and 2018 CMB likelihoods requires first the installation of the latest official Planck likelihood code ([direct download link](http://pla.esac.esa.int/pla/aio/product-action?COSMOLOGY.FILE_ID=COM_Likelihood_Code-v3.0_R3.01.tar.gz)). After a successful installation, the associated Python wrapper should be callable by your Python installation via the command ``import clik``.
-
-Secondly, it also requires downloading the baseline 2015 ([direct link](http://pla.esac.esa.int/pla/aio/product-action?COSMOLOGY.FILE_ID=COM_Likelihood_Data-baseline_R2.00.tar.gz)) and 2018 ([direct link](http://pla.esac.esa.int/pla/aio/product-action?COSMOLOGY.FILE_ID=COM_Likelihood_Data-baseline_R3.00.tar.gz)) CMB data release, all available at the [Planck legacy archive](http://pla.esac.esa.int/pla/#cosmology). You also need to create two environment variables (adding them e.g. to your `.bashrc` file) named `PLANCK_2015_DATA` and `PLANCK_2018_DATA`, pointing respectively to the 2015 and 2018 release data folders (which contain the `low_l`, `hi_l`, etc, subfolders).
-
-## Usage
-
-### MCMC
-
-To start a Monte Carlo Markov chain, ECLAIR only requires the user to prepare an `.ini` file with all the required settings, and then use the command (while in the ECLAIR folder):
-```
-python ECLAIR_mcmc.py /path/to/input_file.ini
-```
-The `inputs` folder contains an extensively commented `.ini` file, `template.ini`, detailing all the capabilities and possible settings of ECLAIR. Users are advised to make a copy of this file before starting to modify it. A short example `.ini` file stripped of comments, `example_short.ini`, is also provided for users wanting to quickly try out the code. One can run it with the commands (while in the ECLAIR folder):
-```
-mkdir outputs
-python ECLAIR_mcmc.py inputs/example_short.ini
-```
-which will run 10 steps of a 10-walker chain on the Hubble parameter today (`H0`) and the physical density of cold dark matter (`omega_cdm`), using BAO data as constraints.
-
-### Maximizer
-
-The ECLAIR suite contains a maximizer which uses a novel technique combining affine-invariant ensemble sampling with simulated annealing. The method works in the following way: the code runs an  MCMC chain with affine-invariant ensemble sampling for a number `n` of steps, with an initial MCMC temperature (by definition, a factor by which the log posterior is divided) set to 1. It then divides this temperature by a factor `f` (> 1), and resumes the chain for another `n` steps. It repeats this pattern for a number `N` of iterations. The combination of this simulated annealing (slowly "cooling" the chain) with the presence of many "walkers" in the ensemble sampling technique allows the code to converge more reliably towards the global maximum of the posterior.
-
-Running a maximization is very simple and uses the exact same type of `.ini` file as a regular MCMC run with ECLAIR, and can be done typically via the command:
-```
-python ECLAIR_maximizer.py /path/to/input_file.ini N n f
-```
-where `N`, `n` and `f` are the aforementioned quantities, to be chosen by the user. Large values of `N` and `n` combined with `f` value close to (but different than) 1 yield better results, though a compromise often need to be found in order to reach an estimate of the maximum likelihood in a reasonable amount of time.
-
-### Chain diagnostics and plotting results
-
-Detailed description to be added soon.
+Please refer to the [ECLAIR wiki](https://github.com/s-ilic/ECLAIR/wiki) for detailed instructions on how to install ECLAIR and get it running.
 
 ## Developing the code
 
