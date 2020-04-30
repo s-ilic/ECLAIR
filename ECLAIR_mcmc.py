@@ -162,8 +162,6 @@ n_dim = len(ini['var_par'])
 n_steps = ini['n_steps']
 thin_by = ini['thin_by']
 n_walkers = ini['n_walkers']
-if ini['n_walkers_type'] == 'prop_to':
-    n_walkers *= len(ini['var_par'])
 
 
 ### Randomize initial walkers positions according to "start" & "width" columns in ini file
@@ -190,8 +188,6 @@ elif ini['input_type'] == 'text_chain':
         ignore_errors=True)
     in_names = [par[1] for par in in_ini['var_par']]
     in_nw = in_ini['n_walkers']
-    if in_ini['n_walkers_type'] == 'prop_to':
-        in_nw *= len(in_ini['var_par'])
     # Get requested sample from chain
     input_p = np.loadtxt(ini['input_fname'] + '.txt')[:, 2:len(in_names)+2]
     input_p = input_p.reshape(-1, in_nw, len(in_names))[ini['ch_start'], :, :]

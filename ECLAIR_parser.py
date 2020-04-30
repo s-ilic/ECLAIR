@@ -10,7 +10,7 @@ def is_number(s):
         return False
 
 
-def parse_ini_file(fname, ignore_errors=False):
+def parse_ini_file(fname, silent_mode=False):
 
     ### Strings containing all warnings and errors
     str_warn = '\n################\n### WARNINGS ###\n################\n'
@@ -508,6 +508,9 @@ def parse_ini_file(fname, ignore_errors=False):
             ]
             if sline[0] not in known_other_options:
                 str_warn += 'Unrecognized option "%s". Ignored.\n' % sline[0]
+    # Adjust number of walkers if "proportional" option is requested
+    if out['n_walkers_type'] == 'prop_to':
+        out['n_walkers'] *= len(out['var_par'])
 
     ### Check for duplicate parameters
     for n in vp_names:
@@ -564,9 +567,10 @@ def parse_ini_file(fname, ignore_errors=False):
     ### Raise error if any problem detected, else return final dictionary
     if error_ct == 0:
         str_err += 'None.\n'
-    print(str_warn)
-    print(str_err)
-    if ignore_errors:
+    if not silent_mode:
+        print(str_warn)
+        print(str_err)
+    if silent_mode:
         return out
     elif error_ct >= 1:
         raise ValueError('Check your .ini file for the error(s) detected above.')

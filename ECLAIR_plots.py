@@ -1,191 +1,329 @@
-import matplotlib
-matplotlib.use("TkAgg")
-import numpy as np
-import matplotlib.pyplot as plt
-import emcee
-import sys
 import os
-import JAM_parser
+import sys
+import numpy as np
+from ECLAIR_parser import *
+import matplotlib.pyplot as plt
+from argparse import ArgumentParser,RawTextHelpFormatter
 
-do_copy = True #False
 
-# Copy, read and parse chain
-fname = sys.argv[1]
-if do_copy:
-    ran = str(np.random.rand())[2:]
-    #os.system('cp -f %s /mnt/local-scratch/u/ilic/%s.h5' % (fname, ran))
-    #reader = emcee.backends.HDFBackend('/mnt/local-scratch/u/ilic/%s.h5' % ran, read_only=True)
-    os.system('cp -f %s /home/users/ilic/tmp/%s.h5' % (fname, ran))
-    reader = emcee.backends.HDFBackend('/home/users/ilic/tmp/%s.h5' % ran, read_only=True)
+####################################################################################
+####################################################################################
+
+# Parsing input arguments
+
+parser = ArgumentParser(
+    description='Analyser for outputs from the ECLAIR suite.',
+    formatter_class=RawTextHelpFormatter,
+)
+parser.add_argument(
+    'file',
+    action='store',
+    nargs=1,
+    type=str,
+    help='Path to chain file to be analyzed.',
+)
+parser.add_argument(
+    '-c',
+    '--copy',
+    metavar='PATH',
+    action='store',
+    help='Make a temporary copy of the chain in PATH before analyzing.\n'
+         '> Default PATH: current directory.',
+)
+parser.add_argument(
+    '-k',
+    '--keep',
+    metavar='LIST',
+    action='store',
+    nargs=1,
+    help='Keep only some parameters for analysis; argument should\n'
+         'be a list of comma-separated parameter indexes.\n'
+         '> Example: "1,5,7-8"  (hyphens indicate a range)\n'
+         '> Default: keep all parameters.',
+)
+parser.add_argument(
+    '-p',
+    '--plot',
+    metavar='LIST',
+    action='store',
+    nargs=1,
+    help='list of plots to produce; argument should be a list of\n'
+         'comma-separated parameter indexes.\n'
+         'List of possible plots:\n'
+         '1 : -log(likelihood) values for all walkers along chain\n'
+         '2 : parameters values for all walkers along chain\n'
+         '3 : derived parameters for all walkers along chain\n'
+         '4 : mean acceptance rate for each walker as chain progresses\n'
+         '5 : acceptance rate averaged over walkers at each chain step\n'
+         '> Example: "1,2,4-6"  (hyphens indicate a range)\n'
+         '> Default: 1 (likelihood plot only)',
+)
+parser.add_argument(
+    '-b',
+    '--burn-in',
+    metavar='N',
+    action='store',
+    nargs=1,
+    help='If N >= 1, int(N) is the number of burned-in steps.\n'
+         'If 0 <= N < 1, float(N) is the fraction of burned-in steps\n'
+         '> Default: 0 (no burn-in)'
+)
+parser.add_argument(
+    '-t',
+    '--thin',
+    metavar='N',
+    action='store',
+    nargs=1,
+    help='Thin the chains so as to keep only every int(N)th step.\n'
+         '> Default: 1 (no thinning)'
+)
+parser.add_argument(
+    '-w',
+    '--thin-walk',
+    metavar='N',
+    action='store',
+    nargs=1,
+    help='Thin the walkers so as to keep only every int(N)th walker.\n'
+         '> Default: 1 (no walker thinning)'
+)
+args = parser.parse_args()
+
+
+####################################################################################
+####################################################################################
+
+# Checking input arguments
+
+if not os.path.isfile(args.file[0]): # Input chain path
+    raise ValueError("Chain %s does not exist." % args.file[0])
 else:
+    test = (
+        args.file[0].endswith('.h5')
+        & os.path.isfile(args.file[0][:-3] + '.lock')
+        & (args.copy is None)
+    )
+    if test:
+        raise ValueError("Chain %s is HDF5 and running; use the -c option to prevent I/O errors that could compromise your MCMC run." % args.file[0])
+    if args.file[0].endswith('.h5'):
+        ftype = 'HDF5'
+    elif args.file[0].endswith('.txt'):
+        ftype = 'text'
+    else:
+        raise ValueError("Unrecognized file format for input chain %s, should be either .txt or .h5" % args.file[0])
+
+if args.copy is not None: # Temp copy path
+    if not os.path.isdir(args.copy):
+        print("Copy path %s does not exist or is not a directory, defaulting to current directory." % args.copy)
+        cp_path = os.path.dirname(os.path.realpath(sys.argv[0]))
+    else:
+        cp_path = os.path.realpath(args.copy)
+
+
+keep = [] # Parameter list
+if args.keep is not None:
+    tmp = args.keep[0].split(',')
+    for t in tmp:
+        if is_number(t):
+            keep.append(int(t))
+        else:
+            st = t.split('-')
+            test_1 = t.count('-') != 1
+            test_2 = any([not is_number(tt) for tt in st])
+            if test_1 | test_2:
+                raise ValueError("Bad formatting for range %s" % t)
+            test_3 = int(st[0]) >= int(st[1])
+            if test_3:
+                raise ValueError("Bad formatting for range %s" % t)
+            keep += range(int(st[0]), int(st[1]) + 1)
+keep = np.unique(keep)
+
+plot = [] # Plot lists
+if args.plot is not None:
+    tmp = args.plot[0].split(',')
+    tmp_plot = []
+    for t in tmp:
+        if is_number(t):
+            tmp_plot.append(int(t))
+        else:
+            st = t.split('-')
+            test_1 = t.count('-') != 1
+            test_2 = any([not is_number(tt) for tt in st])
+            if test_1 | test_2:
+                raise ValueError("Bad formatting for range %s" % t)
+            test_3 = int(st[0]) >= int(st[1])
+            if test_3:
+                raise ValueError("Bad formatting for range %s" % t)
+            tmp_plot += range(int(st[0]), int(st[1]) + 1)
+    for p in tmp_plot:
+        if p not in [1,2,3,4,5]:
+            print("Unrecognised plot option %s, ignored.")
+        else:
+            plot.append(p)
+else:
+    plot = [1]
+
+if args.burn_in is None: # Burn-in
+    burn_is_float = False
+    burn = 0
+else:
+    if not is_number(args.burn_in[0]):
+        raise ValueError("Input burn-in is not a number (%s)" % args.burn_in[0])
+    elif float(args.burn_in[0]) < 0:
+        raise ValueError("Input burn-in is negative (%s)" % args.burn_in[0])
+    elif float(args.burn_in[0]) < 1:
+        burn_is_float = True
+        burn = float(args.burn_in[0])
+    else:
+        burn_is_float = False
+        burn = int(args.burn_in[0])
+
+if args.thin is None: # Sample thinning
+    thin = 1
+else:
+    if not is_number(args.thin[0]):
+        raise ValueError("Input sample thinning is not a number (%s)" % args.thin[0])
+    elif float(args.thin[0]) < 1:
+        raise ValueError("Input sample thinning is < 1 (%s)" % args.thin[0])
+    else:
+        thin = int(args.thin[0])
+
+if args.thin_walk is None: # Walker thinning
+    thinw = 1
+else:
+    if not is_number(args.thin_walk[0]):
+        raise ValueError("Input walker thinning is not a number (%s)" % args.thin_walk[0])
+    elif float(args.thin_walk[0]) < 1:
+        raise ValueError("Input walker thinning is < 1 (%s)" % args.thin_walk[0])
+    else:
+        thinw = int(args.thin_walk[0])
+
+
+####################################################################################
+####################################################################################
+
+# Read and parse chain + copy beforehand if requested
+
+input_fname = os.path.realpath(args.file[0]) # Input chain filename
+
+if input_fname.endswith('.h5'): # Check if HDF5 file
+    import emcee
+
+if args.copy is not None: # Do the copy if requested
+    ran = str(np.random.rand())[2:]
+    fname = "%s/%s" % (cp_path, ran)
+    print("Copying %s into %s" % (input_fname, fname))
+    os.system('cp -f %s %s' % (input_fname, fname))
+else:
+    fname = input_fname
+
+# Read chain content
+if ftype == "HDF5":
+    ini_fname = input_fname[:-3] + '.ini'
+    ini = parse_ini_file(ini_fname, silent_mode=True)
+    par_names = np.array([par[1] for par in ini['var_par']])
     reader = emcee.backends.HDFBackend(fname, read_only=True)
-pars = JAM_parser.parse_ini_file(fname[:-3] + '.ini', ignore_errors=True)
-names = np.array([par[1] for par in pars['var_par']])
-lbs = np.array([par[3] for par in pars['var_par']])
-ubs = np.array([par[4] for par in pars['var_par']])
-if 'gauss_priors' in pars.keys():
+    ln = reader.get_log_prob()
+    ch = reader.get_chain()
+    bl = reader.get_blobs()
+    blobs_names = list(bl.dtype.names)
+    n_blobs = len(blobs_names)
+    n_steps, n_walkers, n_par = ch.shape
+    bl = bl.view(dtype=np.float64).reshape(n_steps, n_walkers, -1)
+else:
+    ini_fname = input_fname[:-4] + '.ini'
+    ini = parse_ini_file(ini_fname, silent_mode=True)
+    par_names = np.array([par[1] for par in ini['var_par']])
+    n_par = len(ini['var_par'])
+    n_walkers = ini['n_walkers']
+    with open(fname, 'r') as f:
+        header = f.readline()
+    all_names = [s.split(':')[1] for s in header[1:].split()]
+    n_blobs = len(all_names) - n_par - 2
+    blobs_names = all_names[-n_blobs:]
+    tmp = np.loadtxt(fname)#.reshape(-1, n_walkers, len(all_names))
+    ln = tmp[:, 1].reshape(-1, n_walkers)
+    ch = tmp[:, 2:2+n_par].reshape(-1, n_walkers, n_par)
+    bl = tmp[:, 2+n_par:].reshape(-1, n_walkers, n_blobs)
+    n_steps = ln.shape[0]
+
+# Read priors
+lbs = np.array([par[3] for par in ini['var_par']])
+ubs = np.array([par[4] for par in ini['var_par']])
+if 'gauss_priors' in ini.keys():
     pri_dict = {}
-    for p in pars['gauss_priors']:
+    for p in ini['gauss_priors']:
         pri_dict[p[0]] = [p[1], p[2]]
-if 'drv_gauss_priors' in pars.keys():
+if 'drv_gauss_priors' in ini.keys():
     drv_pri_dict = {}
-    for p in pars['drv_gauss_priors']:
+    for p in ini['drv_gauss_priors']:
         drv_pri_dict[p[0]] = [p[1], p[2]]
 
-
-# Store chain stuff
-ln = reader.get_log_prob() #discard=burn_in, thin=thin)
-ch = reader.get_chain() #discard=burn_in, thin=thin)
-bl = reader.get_blobs() #discard=burn_in, thin=thin)
-n_steps, n_walkers, n_par = ch.shape
-n_blobs = len(bl.dtype.names)
-
-# Grab plot parameters
-burn = (sys.argv[2]).split('/')
-burn_in, burn_out = float(burn[0]), float(burn[1])
-thin = int(sys.argv[3])
-thin_w = int(sys.argv[4])
-print('###################################')
-print('Input burn-in/out: %s/%s' % (burn_in, burn_out))
-print('Input thinning : %s' % thin)
-print('Input walker thinning : %s' % thin_w)
-print('###################################')
-
-# Burn & thin chain
-if burn_in < 1.:
-    n_burn_in = int(n_steps * burn_in)
-else:
-    n_burn_in = int(burn_in)
-ix1 = n_burn_in
-if burn_out < 1.:
-    n_burn_out = int(n_steps * burn_out)
-else:
-    n_burn_out = int(burn_out)
-ix2 = n_steps - n_burn_out
-ln = ln[ix1:ix2, :]
-ch = ch[ix1:ix2, :, :]
-bl = bl[ix1:ix2, :]
+# Burn chain
+if burn_is_float:
+    burn = int(n_steps * burn)
+ln = ln[burn:, :]
+ch = ch[burn:, :, :]
+bl = bl[burn:, :, :]
 print('Kept %s steps (out of %s) after burning' % (ln.shape[0], n_steps))
-n_steps = ln.shape[0]
+
+# Sample thinning
 ln = ln[::thin, :]
 ch = ch[::thin, :, :]
-bl = bl[::thin, :]
+bl = bl[::thin, :, :]
 print('Kept %s steps (out of %s) after thinning' % (ln.shape[0], n_steps))
-ln = ln[:, ::thin_w]
-ch = ch[:, ::thin_w, :]
-bl = bl[:, ::thin_w]
-print('Kept %s walkers (out of %s) after thinning' % (ln.shape[1], n_walkers))
-print('###################################')
-print('Total samples used : %s' % (ln.shape[0] * ln.shape[1]))
-print('Total number of parameters : %s' % ch.shape[2])
-print('###################################')
 
-if len(sys.argv)>6:
-    keep_par = [int(ix) for ix in (sys.argv[6]).split(',')]
-    ch = ch[:, ::thin_w, keep_par]
-    names = names[keep_par]
-    lbs = lbs[keep_par]
-    ubs = ubs[keep_par]
+# Walker thinning
+ln = ln[:, ::thinw]
+ch = ch[:, ::thinw, :]
+bl = bl[:, ::thinw, :]
+print('Kept %s walkers (out of %s) after walker thinning' % (ln.shape[1], n_walkers))
+print('>>> Total samples used : %s' % (ln.shape[0] * ln.shape[1]))
+
+# Parameter selection
+if args.keep is None:
+    keep = np.arange(n_par)
+g = (keep >= 0) & (keep < n_par)
+if sum(g) == 0:
+    raise ValueError("No valid parameter index passed: %s" % keep)
+else:
+    ch = ch[:, :, keep[g]]
+    par_names = par_names[keep[g]]
+    lbs = lbs[keep[g]]
+    ubs = ubs[keep[g]]
+print('>>> Total number of parameters : %s' % ch.shape[2])
 n_steps, n_walkers, n_par = ch.shape
-print('Number of parameters kept : %s' % n_par)
-print('###################################')
 
-
-to_plot = (sys.argv[5]).split(':')
-
-if 'temperature' in bl.dtype.names:
-    print('Has field "temperature"')
-    temp = bl['temperature']
-elif 'real_lnprob' in bl.dtype.names:
-    print('Has field "real_lnprob"')
-    temp = bl['real_lnprob']/ln
-elif 'real_lnl' in bl.dtype.names:
-    print('Has field "real_lnl"')
-    temp = bl['real_lnl']/ln
+# Check for temperature
+if 'temperature' in blobs_names:
+    temp = bl[:, :, blobs_names.index('temperature')]
 else:
     temp = ln*0. + 1.
-print("Last temperature is : %s" % temp[-1, -1])
-
-if 'R' in to_plot:
-    rs = np.zeros(n_par)
-    for i in range(n_par):
-        rs[i] = ch[:, :, i].mean(axis=1).std()/ch[:, :, i].std(axis=1).mean()
-        print("Equivalent R for parameter %s = %s" % (names[i], rs[i]))
-    ix = rs.argmax()
-    print("=======================================")
-    print("Maximum R is for parameter %s : R = %s" % (names[ix], rs[ix]))
-    print("=======================================")
-
-if '1' in to_plot:
-    fig = plt.figure()
-    plt.plot(ln,alpha=0.1)
-    if 'mini' not in fname:
-        plt.axhline(np.percentile(ln, 2.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-        plt.axhline(np.percentile(ln, 16, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-        plt.axhline(np.percentile(ln, 50, axis=1)[n_steps//2:].mean(), color='blue', lw=2)
-        plt.axhline(np.percentile(ln, 84, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-        plt.axhline(np.percentile(ln, 97.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-    plt.plot(np.percentile(ln, 2.5, axis=1), color='black', lw=2, ls='--')
-    plt.plot(np.percentile(ln, 16, axis=1), color='black', lw=2, ls='--')
-    plt.plot(np.percentile(ln, 50, axis=1), color='black', lw=2, ls='--')
-    plt.plot(np.percentile(ln, 100-16., axis=1), color='black', lw=2, ls='--')
-    plt.plot(np.percentile(ln, 100.-2.5, axis=1), color='black', lw=2, ls='--')
-
-if '1max' in to_plot:
-    fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey=True,  gridspec_kw={'wspace': 0})
-    ax1.plot(ln*temp,alpha=0.1)
-    if 'mini' not in fname:
-        ax1.axhline(np.percentile(ln*temp, 2.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-        ax1.axhline(np.percentile(ln*temp, 16, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-        ax1.axhline(np.percentile(ln*temp, 50, axis=1)[n_steps//2:].mean(), color='blue', lw=2)
-        ax1.axhline(np.percentile(ln*temp, 84, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-        ax1.axhline(np.percentile(ln*temp, 97.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-    ax1.plot(np.percentile(ln*temp, 2.5, axis=1), color='black', lw=2, ls='--')
-    ax1.plot(np.percentile(ln*temp, 16, axis=1), color='black', lw=2, ls='--')
-    ax1.plot(np.percentile(ln*temp, 50, axis=1), color='black', lw=2, ls='--')
-    ax1.plot(np.percentile(ln*temp, 100-16., axis=1), color='black', lw=2, ls='--')
-    ax1.plot(np.percentile(ln*temp, 100.-2.5, axis=1), color='black', lw=2, ls='--')
-    ax1.plot((ln.mean(axis=1)+ch.shape[2]/2.)*temp[:, 0], color='grey')
-    ax1.axhline((((ln.mean(axis=1)+ch.shape[2]/2.)*temp[:, 0])[-1]), color='red', ls='--')
-    ####
-    fakstd = np.max(ln*temp, axis=1)-np.median(ln*temp, axis=1)
-    malntemp = np.ma.masked_array(ln*temp, mask=((ln*temp) <= (np.median(ln*temp, axis=1)-3.*fakstd)[:, None]))
-    maln = np.ma.masked_array(ln, mask=((ln*temp) <= (np.median(ln*temp, axis=1)-3.*fakstd)[:, None]))
-    matemp = np.ma.masked_array(temp, mask=((ln*temp) <= (np.median(ln*temp, axis=1)-3.*fakstd)[:, None]))
-    ax2.plot(malntemp,alpha=0.1)
-    if 'mini' not in fname:
-        ax2.axhline(np.percentile(malntemp, 2.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-        ax2.axhline(np.percentile(malntemp, 16, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-        ax2.axhline(np.percentile(malntemp, 50, axis=1)[n_steps//2:].mean(), color='blue', lw=2)
-        ax2.axhline(np.percentile(malntemp, 84, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-        ax2.axhline(np.percentile(malntemp, 97.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-    ax2.plot(np.percentile(malntemp, 2.5, axis=1), color='black', lw=2, ls='--')
-    ax2.plot(np.percentile(malntemp, 16, axis=1), color='black', lw=2, ls='--')
-    ax2.plot(np.percentile(malntemp, 50, axis=1), color='black', lw=2, ls='--')
-    ax2.plot(np.percentile(malntemp, 100-16., axis=1), color='black', lw=2, ls='--')
-    ax2.plot(np.percentile(malntemp, 100.-2.5, axis=1), color='black', lw=2, ls='--')
-    ax2.plot((maln.mean(axis=1)+ch.shape[2]/2.)*matemp[:, 0], color='purple')
-    ax2.axhline((((maln.mean(axis=1)+ch.shape[2]/2.)*matemp[:, 0])[-1]), color='purple', ls='--')
 
 
+####################################################################################
+####################################################################################
 
-if '-1' in to_plot:
-    plt.plot(-ln,alpha=0.1)
-    if 'mini' not in fname:
-        plt.axhline(-np.percentile(ln, 2.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-        plt.axhline(-np.percentile(ln, 16, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-        plt.axhline(-np.percentile(ln, 50, axis=1)[n_steps//2:].mean(), color='blue', lw=2)
-        plt.axhline(-np.percentile(ln, 84, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-        plt.axhline(-np.percentile(ln, 97.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-    plt.plot(-np.percentile(ln, 2.5, axis=1), color='black', lw=2, ls='--')
-    plt.plot(-np.percentile(ln, 16, axis=1), color='black', lw=2, ls='--')
-    plt.plot(-np.percentile(ln, 50, axis=1), color='black', lw=2, ls='--')
-    plt.plot(-np.percentile(ln, 100-16., axis=1), color='black', lw=2, ls='--')
-    plt.plot(-np.percentile(ln, 100.-2.5, axis=1), color='black', lw=2, ls='--')
+if 1 in plot:
+    fig1, ax1 = plt.subplots(1, 1)
+    ax1.plot(-1. * ln, alpha=0.1)
+    for p, ls in zip([2.5, 16, 50, 84, 97.5], ['-.','--','-','--','-.']):
+        ax1.axhline(
+            np.percentile(-1. * ln, p, axis=1)[n_steps//2:].mean(),
+            color='blue',
+            lw=2,
+            ls=ls,
+        )
+    for p in [2.5, 16, 50, 84, 97.5]:
+        ax1.plot(
+            np.percentile(-1. * ln, p, axis=1),
+            color='black',
+            lw=2,
+            ls='--',
+        )
+    ax1.set_xlabel("MCMC step")
+    ax1.set_ylabel("-log(likelihood)")
 
-
-if '2' in to_plot:
-    fig = plt.figure()
+if 2 in plot:
     nr, nc = 1, 1
     while True:
         if (nr*nc) >= n_par:
@@ -194,44 +332,49 @@ if '2' in to_plot:
         if (nr*nc) >= n_par:
             break
         nr += 1
-    for i in range(n_par):
-        plt.subplot(nr,nc,i+1)
-        plt.plot(ch[:, :, i],alpha=0.1)
-        if 'mini' not in fname:
-            plt.axhline(np.percentile(ch[:, :, i], 2.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-            plt.axhline(np.percentile(ch[:, :, i], 16, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-            plt.axhline(np.percentile(ch[:, :, i], 50, axis=1)[n_steps//2:].mean(), color='blue', lw=2)
-            plt.axhline(np.percentile(ch[:, :, i], 84, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-            plt.axhline(np.percentile(ch[:, :, i], 97.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-        plt.plot(np.percentile(ch[:, :, i], 2.5, axis=1), color='black', lw=2, ls='--')
-        plt.plot(np.percentile(ch[:, :, i], 16, axis=1), color='black', lw=2, ls='--')
-        plt.plot(np.percentile(ch[:, :, i], 50, axis=1), color='black', lw=2, ls='--')
-        plt.plot(np.percentile(ch[:, :, i], 100-16., axis=1), color='black', lw=2, ls='--')
-        plt.plot(np.percentile(ch[:, :, i], 100.-2.5, axis=1), color='black', lw=2, ls='--')
-        plt.ylabel(names[i])
-        curr_ylim = plt.ylim()
-        if (np.isfinite(lbs[i])) & (lbs[i] >= curr_ylim[0]):
-            plt.axhline(lbs[i], ls='--', color='red')
-        if (np.isfinite(ubs[i])) & (ubs[i] <= curr_ylim[1]):
-            plt.axhline(ubs[i], ls='--', color='red')
-        if 'gauss_priors' in pars.keys():
-            if names[i] in pri_dict.keys():
-                pri = pri_dict[names[i]]
-                for m, ls in zip([-1.,0.,1.],['--','-','--']):
-                            val = pri[0] + m * pri[1]
-                            if (curr_ylim[0] <= val <= curr_ylim[1]):
-                                plt.axhline(val, ls=ls, color='orange')
-    fig.subplots_adjust(
+    fig2, ax2 = plt.subplots(nr, nc, squeeze=False, sharex=True)
+    ix = 0
+    for r in range(nr):
+        for c in range(nc):
+            ax2[r, c].plot(ch[:, :, ix], alpha=0.1)
+            for p, ls in zip([2.5, 16, 50, 84, 97.5], ['-.','--','-','--','-.']):
+                ax2[r, c].axhline(
+                    np.percentile(ch[:, :, ix], p, axis=1)[n_steps//2:].mean(),
+                    color='blue',
+                    lw=2,
+                    ls=ls,
+                )
+            for p in [2.5, 16, 50, 84, 97.5]:
+                ax2[r, c].plot(
+                    np.percentile(ch[:, :, ix], p, axis=1),
+                    color='black',
+                    lw=2,
+                    ls='--',
+                )
+            ax2[r, c].set_ylabel(par_names[ix])
+            curr_ylim = ax2[r, c].get_ylim()
+            if (np.isfinite(lbs[ix])) & (lbs[ix] >= curr_ylim[0]):
+                ax2[r, c].axhline(lbs[ix], ls='--', color='red')
+            if (np.isfinite(ubs[ix])) & (ubs[ix] <= curr_ylim[1]):
+                ax2[r, c].axhline(ubs[ix], ls='--', color='red')
+            if 'gauss_priors' in ini.keys():
+                if par_names[ix] in pri_dict.keys():
+                    pri = pri_dict[par_names[ix]]
+                    for m, ls in zip([-1.,0.,1.],['--','-','--']):
+                        val = pri[0] + m * pri[1]
+                        if (curr_ylim[0] <= val <= curr_ylim[1]):
+                            ax2[r, c].axhline(val, ls=ls, color='orange')
+            ix += 1
+    fig2.subplots_adjust(
         left = 0.05,
         bottom = 0.03,
         right = 0.99,
         top = 0.98,
         wspace = 0.34,
-        hspace = 0.2,
+        hspace = 0.,
     )
 
-if '3' in to_plot:
-    plt.figure()
+if 3 in plot:
     nr, nc = 1, 1
     while True:
         if (nr*nc) >= n_blobs:
@@ -240,303 +383,73 @@ if '3' in to_plot:
         if (nr*nc) >= n_blobs:
             break
         nr += 1
-    nb = bl.dtype.names
-    for i, n in enumerate(nb):
-        plt.subplot(nr,nc,i+1)
-        plt.plot(bl[n],alpha=0.1)
-        if not 'mini' in fname:
-            plt.axhline(np.percentile(bl[n], 2.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-            plt.axhline(np.percentile(bl[n], 16, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-            plt.axhline(np.percentile(bl[n], 50, axis=1)[n_steps//2:].mean(), color='blue', lw=2)
-            plt.axhline(np.percentile(bl[n], 84, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-            plt.axhline(np.percentile(bl[n], 97.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-        plt.plot(np.percentile(bl[n], 2.5, axis=1), color='black', lw=2, ls='--')
-        plt.plot(np.percentile(bl[n], 16, axis=1), color='black', lw=2, ls='--')
-        plt.plot(np.percentile(bl[n], 50, axis=1), color='black', lw=2, ls='--')
-        plt.plot(np.percentile(bl[n], 100-16., axis=1), color='black', lw=2, ls='--')
-        plt.plot(np.percentile(bl[n], 100.-2.5, axis=1), color='black', lw=2, ls='--')
-        plt.ylabel(n)
-        curr_ylim = plt.ylim()
-        if 'drv_gauss_priors' in pars.keys():
-            if n in drv_pri_dict.keys():
-                pri = drv_pri_dict[n]
-                for m, ls in zip([-1.,0.,1.],['--','-','--']):
-                            val = pri[0] + m * pri[1]
-                            if (curr_ylim[0] <= val <= curr_ylim[1]):
-                                plt.axhline(val, ls=ls, color='orange')
-    if ('supersmartbin' in fname) | ('only3' in fname):
-        plt.figure()
-        if ('supersmartbin' in fname):
-            imax, n1, n2 = 8, 2, 4
-        else:
-            imax, n1, n2 = 3, 1, 2
-        for i in range(1, imax):
-            plt.subplot(n1,n2,i)
-            ix = names.index('f_k_%s' % i)
-            if i==1:
-                logtmp = ch[:, ::thin_w, ix]*(np.log10(0.18)-np.log10(0.00056))+np.log10(0.00056)
-                tmp = 10.**logtmp
-            else:
-                tmp = 10.**(ch[:, ::thin_w, ix]*(np.log10(0.18)-logtmp)+logtmp)
-                logtmp = ch[:, ::thin_w, ix]*(np.log10(0.18)-logtmp)+logtmp
-            plt.plot(tmp,alpha=0.1)
-            plt.axhline(np.percentile(tmp, 2.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-            plt.axhline(np.percentile(tmp, 16, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-            plt.axhline(np.percentile(tmp, 50, axis=1)[n_steps//2:].mean(), color='blue', lw=2)
-            plt.axhline(np.percentile(tmp, 84, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-            plt.axhline(np.percentile(tmp, 97.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-            plt.plot(np.percentile(tmp, 2.5, axis=1), color='black', lw=2, ls='--')
-            plt.plot(np.percentile(tmp, 16, axis=1), color='black', lw=2, ls='--')
-            plt.plot(np.percentile(tmp, 50, axis=1), color='black', lw=2, ls='--')
-            plt.plot(np.percentile(tmp, 100-16., axis=1), color='black', lw=2, ls='--')
-            plt.plot(np.percentile(tmp, 100.-2.5, axis=1), color='black', lw=2, ls='--')
-            plt.ylabel('k_values_val_%s' % i)
-        plt.figure()
-        for i in range(1, imax):
-            ix = names.index('f_k_%s' % i)
-            if i==1:
-                logtmp = ch[:, ::thin_w, ix]*(np.log10(0.18)-np.log10(0.00056))+np.log10(0.00056)
-                tmp = 10.**logtmp
-            else:
-                tmp = 10.**(ch[:, ::thin_w, ix]*(np.log10(0.18)-logtmp)+logtmp)
-                logtmp = ch[:, ::thin_w, ix]*(np.log10(0.18)-logtmp)+logtmp
-            plt.semilogy(tmp,alpha=0.1,color='C%s' % (i-1))
-            # plt.axhline(np.percentile(tmp, 2.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-            # plt.axhline(np.percentile(tmp, 16, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-            # plt.axhline(np.percentile(tmp, 50, axis=1)[n_steps//2:].mean(), color='blue', lw=2)
-            # plt.axhline(np.percentile(tmp, 84, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='--')
-            # plt.axhline(np.percentile(tmp, 97.5, axis=1)[n_steps//2:].mean(), color='blue', lw=2, ls='-.')
-            # plt.semilogy(np.percentile(tmp, 2.5, axis=1), color='black', lw=2, ls='--')
-            # plt.semilogy(np.percentile(tmp, 16, axis=1), color='black', lw=2, ls='--')
-            # plt.semilogy(np.percentile(tmp, 50, axis=1), color='black', lw=2, ls='--')
-            # plt.semilogy(np.percentile(tmp, 100-16., axis=1), color='black', lw=2, ls='--')
-            # plt.semilogy(np.percentile(tmp, 100.-2.5, axis=1), color='black', lw=2, ls='--')
-        plt.axhline(0.00056, color='black', lw=2)
-        plt.axhline(0.18, color='black', lw=2)
-        plt.ylabel('k_values')
+    fig3, ax3 = plt.subplots(nr, nc, squeeze=False, sharex=True)
+    ix = 0
+    for r in range(nr):
+        for c in range(nc):
+            ax3[r, c].plot(bl[:, :, ix], alpha=0.1)
+            for p, ls in zip([2.5, 16, 50, 84, 97.5], ['-.','--','-','--','-.']):
+                ax3[r, c].axhline(
+                    np.percentile(bl[:, :, ix], p, axis=1)[n_steps//2:].mean(),
+                    color='blue',
+                    lw=2,
+                    ls=ls,
+                )
+            for p in [2.5, 16, 50, 84, 97.5]:
+                ax3[r, c].plot(
+                    np.percentile(bl[:, :, ix], p, axis=1),
+                    color='black',
+                    lw=2,
+                    ls='--',
+                )
+            ax3[r, c].set_ylabel(blobs_names[ix])
+            curr_ylim = ax3[r, c].get_ylim()
+            if 'drv_gauss_priors' in ini.keys():
+                if blobs_names[ix] in drv_pri_dict.keys():
+                    pri = drv_pri_dict[blobs_names[ix]]
+                    for m, ls in zip([-1.,0.,1.],['--','-','--']):
+                        val = pri[0] + m * pri[1]
+                        if (curr_ylim[0] <= val <= curr_ylim[1]):
+                            ax3[r, c].axhline(val, ls=ls, color='orange')
+            ix += 1
+    fig2.subplots_adjust(
+        left = 0.05,
+        bottom = 0.03,
+        right = 0.99,
+        top = 0.98,
+        wspace = 0.34,
+        hspace = 0.,
+    )
 
+if 4 in plot:
+    fig4, ax4 = plt.subplots(1, 1)
+    test = (ch[1:, :, 0] - ch[:-1, :, 0]) != 0.
+    test = (
+        np.cumsum(test, axis=0)
+        / np.arange(1, test.shape[0]+1)[:, None].astype('float')
+    )
+    ax4.plot(test, alpha=0.1)
+    for p, ls in zip([2.5, 16, 50, 84, 97.5], ['-.','--','-','--','-.']):
+        plt.plot(
+            np.percentile(test, p, axis=1),
+            color='black',
+            lw=2,
+            ls=ls,
+        )
+    ax4.set_xlabel("MCMC step")
+    ax4.set_ylabel("Mean acceptance rate")
 
-if '4' in to_plot:
-    plt.figure()
-    test = (ch[1:, ::thin_w, 0] - ch[:-1, ::thin_w, 0]) != 0.
-    ttest = np.cumsum(test, axis=0)/np.arange(1, test.shape[0]+1)[:, None].astype('float')
-    plt.plot(ttest, alpha=0.1)
-    plt.plot(np.percentile(ttest, 2.5, axis=1), color='black', lw=2, ls='-.')
-    plt.plot(np.percentile(ttest, 16., axis=1), color='black', lw=2, ls='--')
-    plt.plot(np.percentile(ttest, 50, axis=1), color='black', lw=2)
-    plt.plot(np.percentile(ttest, 84, axis=1), color='black', lw=2, ls='--')
-    plt.plot(np.percentile(ttest, 97.5, axis=1), color='black', lw=2, ls='-.')
-
-if '5' in to_plot:
-    plt.figure()
-    test = (ch[1:, ::thin_w, 0] - ch[:-1, ::thin_w, 0]) != 0.
+if 5 in plot:
+    fig5, ax5 = plt.subplots(1, 1)
+    test = (ch[1:, :, 0] - ch[:-1, :, 0]) != 0.
     y = test.mean(axis=1)
     x = np.arange(len(y))
-    plt.plot(test.mean(axis=1), color='blue')
-    plt.plot(x, np.poly1d(np.polyfit(x,y,3))(x), color='black', lw=2)
+    ax5.plot(test.mean(axis=1), color='blue')
+    ax5.plot(x, np.poly1d(np.polyfit(x,y,3))(x), color='black', lw=2)
+    ax5.set_xlabel("MCMC step")
+    ax5.set_ylabel("Mean acceptance rate")
 
-if '6' in to_plot:
-    plt.figure()
-    nr, nc = 1, 1
-    while True:
-        if (nr*nc) >= n_par:
-            break
-        nc += 1
-        if (nr*nc) >= n_par:
-            break
-        nr += 1
-    for i in range(n_par):
-        plt.subplot(nr,nc,i+1)
-        plt.plot(ch[:, :, i], ln, '+')
-        plt.xlabel(names[i])
+if args.copy is not None:
+    os.system('rm %s' % fname)
 
-if '7_hist' in to_plot:
-    plt.figure()
-    nr, nc = 1, 1
-    while True:
-        if (nr*nc) >= n_par:
-            break
-        nc += 1
-        if (nr*nc) >= n_par:
-            break
-        nr += 1
-    for i in range(n_par):
-        plt.subplot(nr,nc,i+1)
-        plt.hist(ch[:, :, i].flatten(), bins=20, histtype='step')
-        plt.xlabel(names[i])
-
-
-if '7' in to_plot:
-    plt.figure()
-    import corner
-    corner.corner(ch[-1, :, :], plot_contours=False, plot_density=False, labels=names)
-
-if '7_c' in to_plot:
-    plt.figure()
-    import corner
-    corner.corner(ch.reshape(-1, ch.shape[2]), plot_contours=True, plot_datapoints=False, plot_density=False, labels=names)
-
-if '7_p' in to_plot:
-    plt.figure()
-    import corner
-    corner.corner(ch.reshape(-1, ch.shape[2]), plot_contours=False, plot_datapoints=True, plot_density=False, labels=names)
-
-if '7_d' in to_plot:
-    plt.figure()
-    import corner
-    corner.corner(ch.reshape(-1, ch.shape[2]), plot_contours=False, plot_datapoints=False, plot_density=True, labels=names)
-
-if '7_cp' in to_plot:
-    plt.figure()
-    import corner
-    corner.corner(ch.reshape(-1, ch.shape[2]), plot_contours=True, plot_datapoints=True, plot_density=False, labels=names)
-
-if '7_cd' in to_plot:
-    plt.figure()
-    import corner
-    corner.corner(ch.reshape(-1, ch.shape[2]), plot_contours=True, plot_datapoints=False, plot_density=True, labels=names)
-
-if '7_dp' in to_plot:
-    plt.figure()
-    import corner
-    corner.corner(ch.reshape(-1, ch.shape[2]), plot_contours=False, plot_datapoints=True, plot_density=True, labels=names)
-
-if '7_cdp' in to_plot:
-    plt.figure()
-    import corner
-    corner.corner(ch.reshape(-1, ch.shape[2]), plot_contours=True, plot_datapoints=True, plot_density=True, labels=names)
-
-
-
-for ind, k in enumerate(to_plot):
-    if '8cov' in k:
-        n_par_max = int(k[5:])
-        fig = plt.figure()
-        n_comb = n_par_max*(n_par_max-1)/2
-        nr, nc = 1, 1
-        while True:
-            if (nr*nc) >= n_comb:
-                break
-            nc += 1
-            if (nr*nc) >= n_comb:
-                break
-            nr += 1
-        ct = 1
-        for i in range(n_par_max):
-            for j in range(i+1, n_par_max):
-                plt.subplot(nr,nc,ct)
-                ct += 1
-                quant = [np.cov(ch[ix, :, i], ch[ix, :, j])[0,1] for ix in range(n_steps)]
-                plt.plot(quant)
-                plt.ylabel("%s x %s" % (names[i], names[j]))
-        fig.subplots_adjust(
-            left = 0.05,
-            bottom = 0.03,
-            right = 0.99,
-            top = 0.98,
-            wspace = 0.34,
-            hspace = 0.2,
-        )
-
-for ind, k in enumerate(to_plot):
-    if '8cor' in k:
-        n_par_max = int(k[5:])
-        fig = plt.figure()
-        n_comb = n_par_max*(n_par_max-1)/2
-        nr, nc = 1, 1
-        while True:
-            if (nr*nc) >= n_comb:
-                break
-            nc += 1
-            if (nr*nc) >= n_comb:
-                break
-            nr += 1
-        ct = 1
-        for i in range(n_par_max):
-            for j in range(i+1, n_par_max):
-                plt.subplot(nr,nc,ct)
-                ct += 1
-                quant = [np.corrcoef(ch[ix, :, i], ch[ix, :, j])[0,1] for ix in range(n_steps)]
-                plt.plot(quant)
-                plt.ylabel("%s x %s" % (names[i], names[j]))
-        fig.subplots_adjust(
-            left = 0.05,
-            bottom = 0.03,
-            right = 0.99,
-            top = 0.98,
-            wspace = 0.34,
-            hspace = 0.2,
-        )
-
-if "9" not in to_plot:
-    plt.show()
-
-
-#sys.exit()
-
-if do_copy:
-    #os.system('rm /mnt/local-scratch/u/ilic/%s.h5' % ran)
-    os.system('rm /home/users/ilic/tmp/%s.h5' % ran)
-
-sys.exit()
-#################################
-def recur(D,N):
-    if N == 1:
-        return [[i] for i in range(D+1)]
-    else:
-        out = []
-        for dN in range(D+1):
-            sols = recur(D-dN, N-1)
-            for sol in sols:
-                out.append(sol + [dN])
-        return out
-
-n_deg = 2
-all_pwr = np.array(recur(n_deg, n_par))
-tmp_all_tmp = np.unique(temp)#[1:] # Exclude potentially incomplete last T step
-all_tmp = [tmp_all_tmp[-1]]
-for v in tmp_all_tmp[::-1]:
-    if not np.isclose(all_tmp[-1], v):
-        all_tmp.append(v)
-all_tmp = np.array(all_tmp[::-1])
-
-
-all_x, all_y = [], []
-
-new_lbs = ch.reshape(-1, 51).min(axis=0)
-new_ubs = ch.reshape(-1, 51).max(axis=0)
-
-for ix in tqdm(range(5)):
-
-    ix_T0, ix_T1 = 1, 10
-    g = np.where((all_tmp[ix_T0+ix*10] <= temp) & (temp <= all_tmp[ix_T1+ix*10]) & ((ln*temp) >= (np.median(ln*temp, axis=1)-3.*fakstd)[:, None]))
-    all_x.append([g[0].min() , g[0].max()])
-    if 'real_lnprob' in bl.dtype.names:
-        lnl = bl['real_lnprob'][g]
-    else:
-        lnl = bl['real_lnl'][g]
-
-    quot = (ch[g].max(axis=0)-ch[g].min(axis=0))
-    diff = ch[g].min(axis=0)
-    ch2 = (ch[g]-diff)/quot
-    # ch2 = ch[g]
-    part_ch = np.zeros((ch2.shape[0], len(all_pwr)))
-    for i, pwr in enumerate(all_pwr):
-        part_ch[:, i] = np.prod(ch2**pwr,axis=1)
-
-    from scipy.linalg import lstsq
-    res = lstsq(part_ch, lnl)
-
-    fitted_lnl = np.dot(part_ch, res[0])
-
-    def new_mlnprob(p, res):
-        if np.any(p<=new_lbs) | np.any(p>=new_ubs):
-            return np.inf
-        pp = (p-diff)/quot
-        vec = np.prod(pp**all_pwr,axis=1)
-        return -np.dot(vec, res[0])
-
-    from scipy.optimize import minimize
-    yay = minimize(new_mlnprob, ch2[0]*quot+diff, method='Nelder-Mead', args=(res,), options={"maxfev":1000000})
-
-    all_y.append([-yay["fun"], -yay["fun"]])
+plt.show()
