@@ -22,6 +22,7 @@ print('#'*(25+len(ini['output_root'])))
 
 
 ### Import requested variant of class python wrapper
+print('test')
 which_class = ini['which_class']
 exec('import %s as classy' % which_class)
 
