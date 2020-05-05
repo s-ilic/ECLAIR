@@ -12,10 +12,10 @@ BAO data used in Planck 2015 papers as "external data", contains
 - SDSS DR7 MGS from 1409.3242
 
 "H0_HST" :
-H0 measurements from Riess et al., 1103.2976
+H0 measurements from Riess et al. from 1103.2976
 
 
-### Planck 2015
+### Planck 2015 (from 1507.02704)
 
 "Planck2015_lowTT" :
 Planck 2015 CMB low-ell T likelihood
@@ -42,7 +42,7 @@ Planck 2015 CMB lensing likelihood, using T map-based lensing reconstruction
 Planck 2015 CMB lensing likelihood, using T and P map-based lensing reconstruction
 
 
-### Planck 2018
+### Planck 2018 (from 1907.12875)
 
 "Planck2018_lowTT" :
 Planck 2018 CMB low-ell T likelihood

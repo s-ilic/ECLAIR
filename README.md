@@ -22,7 +22,7 @@ The ECLAIR project is licensed under the MIT License. See the [LICENSE file](htt
 
 ## Code of conduct
 
-While ECLAIR is free to use, we request that publications using the code should cite at least the paper ["Dark Matter properties through cosmic history"](https://arxiv.org/abs/2004.09572) (arXiv:2004.09572).
+While ECLAIR is free to use, we request that publications using the code should cite at least the paper ["Dark Matter properties through cosmic history"](https://arxiv.org/abs/2004.09572) (arXiv:2004.09572). The authors of the `emcee` sampler request kindly [this paper](https://arxiv.org/abs/1202.3665) to be cited. The published references to the various likelihoods bundled with ECLAIR are included in the [likelihood list](https://github.com/s-ilic/ECLAIR/blob/master/likelihoods/likelihoods.txt).
 
 ## Support
 
