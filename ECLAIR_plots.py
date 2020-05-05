@@ -297,7 +297,7 @@ n_steps, n_walkers, n_par = ch.shape
 if 'temperature' in blobs_names:
     temp = bl[:, :, blobs_names.index('temperature')]
 else:
-    temp = ln*0. + 1.
+    temp = np.ones(ln.shape)
 
 
 ####################################################################################
