@@ -167,8 +167,10 @@ def parse_ini_file(fname, silent_mode=False):
             error_ct += 1
         elif out['input_type'] == 'text_chain':
             out['input_fname'] = slines[ix][1][:-4]
-        else:
+        elif out['input_type'] == 'HDF5_chain':
             out['input_fname'] = slines[ix][1][:-3]
+        else:
+            out['input_fname'] = slines[ix][1]
 
     ### Deal with continue_chain
     ct = options.count('continue_chain')
