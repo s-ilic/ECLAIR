@@ -257,6 +257,23 @@ if (__name__ == "__main__") & (not ini['debug_mode']):
     )
     ct = 0
     for result in sampler.sample(p_start, iterations=n_steps, thin_by=thin_by):
+        # One-time check for infinities
+        if ct == 0:
+            n_finite = np.isfinite(result.log_prob).sum()
+            if n_finite < 2:
+                raise ValueError(
+                    "Your chain cannot progress:"
+                    "less than 2 of your walkers are starting at a finite value of the posterior."
+                    "Please check if your starting positions are correct, and/or use"
+                    "debug mode to check your likelihoods."
+                )
+            elif n_finite < (0.5 * n_walkers):
+                print(
+                    "Warning, your chain will take time to converge:"
+                    "only %s%% of your walkers are starting at a finite value of the posterior."
+                    "Please check if your starting positions are correct, and/or use"
+                    "debug mode to check your likelihoods." % (n_finite * 100. / n_walkers)
+                )
         # Always save the last MCMC step as input file for future chain
         np.savetxt(ini['output_root'] + '.input',
                    np.hstack((result.coords, result.log_prob[:, None])),

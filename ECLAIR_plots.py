@@ -48,7 +48,7 @@ parser.add_argument(
     action='store',
     nargs=1,
     help='list of plots to produce; argument should be a list of\n'
-         'comma-separated parameter indexes.\n'
+         'comma-separated numbers.\n'
          'List of possible plots:\n'
          '1 : -log(likelihood) values for all walkers along chain\n'
          '2 : parameters values for all walkers along chain\n'
@@ -156,7 +156,7 @@ if args.plot is not None:
             tmp_plot += range(int(st[0]), int(st[1]) + 1)
     for p in tmp_plot:
         if p not in [1,2,3,4,5]:
-            print("Unrecognised plot option %s, ignored.")
+            print("Unrecognised plot option %s, ignored." % p)
         else:
             plot.append(p)
 else:
@@ -336,34 +336,39 @@ if 2 in plot:
     ix = 0
     for r in range(nr):
         for c in range(nc):
-            ax2[r, c].plot(ch[:, :, ix], alpha=0.1)
-            for p, ls in zip([2.5, 16, 50, 84, 97.5], ['-.','--','-','--','-.']):
-                ax2[r, c].axhline(
-                    np.percentile(ch[:, :, ix], p, axis=1)[n_steps//2:].mean(),
-                    color='blue',
-                    lw=2,
-                    ls=ls,
-                )
-            for p in [2.5, 16, 50, 84, 97.5]:
-                ax2[r, c].plot(
-                    np.percentile(ch[:, :, ix], p, axis=1),
-                    color='black',
-                    lw=2,
-                    ls='--',
-                )
-            ax2[r, c].set_ylabel(par_names[ix])
-            curr_ylim = ax2[r, c].get_ylim()
-            if (np.isfinite(lbs[ix])) & (lbs[ix] >= curr_ylim[0]):
-                ax2[r, c].axhline(lbs[ix], ls='--', color='red')
-            if (np.isfinite(ubs[ix])) & (ubs[ix] <= curr_ylim[1]):
-                ax2[r, c].axhline(ubs[ix], ls='--', color='red')
-            if 'gauss_priors' in ini.keys():
-                if par_names[ix] in pri_dict.keys():
-                    pri = pri_dict[par_names[ix]]
-                    for m, ls in zip([-1.,0.,1.],['--','-','--']):
-                        val = pri[0] + m * pri[1]
-                        if (curr_ylim[0] <= val <= curr_ylim[1]):
-                            ax2[r, c].axhline(val, ls=ls, color='orange')
+            if ix < n_par:
+                ax2[r, c].plot(ch[:, :, ix], alpha=0.1)
+                for p, ls in zip([2.5, 16, 50, 84, 97.5], ['-.','--','-','--','-.']):
+                    ax2[r, c].axhline(
+                        np.percentile(ch[:, :, ix], p, axis=1)[n_steps//2:].mean(),
+                        color='blue',
+                        lw=2,
+                        ls=ls,
+                    )
+                for p in [2.5, 16, 50, 84, 97.5]:
+                    ax2[r, c].plot(
+                        np.percentile(ch[:, :, ix], p, axis=1),
+                        color='black',
+                        lw=2,
+                        ls='--',
+                    )
+                ax2[r, c].set_ylabel(par_names[ix])
+                curr_ylim = ax2[r, c].get_ylim()
+                if (np.isfinite(lbs[ix])) & (lbs[ix] >= curr_ylim[0]):
+                    ax2[r, c].axhline(lbs[ix], ls='--', color='red')
+                if (np.isfinite(ubs[ix])) & (ubs[ix] <= curr_ylim[1]):
+                    ax2[r, c].axhline(ubs[ix], ls='--', color='red')
+                if 'gauss_priors' in ini.keys():
+                    if par_names[ix] in pri_dict.keys():
+                        pri = pri_dict[par_names[ix]]
+                        for m, ls in zip([-1.,0.,1.],['--','-','--']):
+                            val = pri[0] + m * pri[1]
+                            if (curr_ylim[0] <= val <= curr_ylim[1]):
+                                ax2[r, c].axhline(val, ls=ls, color='orange')
+                for label in ax2[r, c].get_yticklabels():
+                    label.set_rotation(45)
+            else:
+                ax2[r, c].set_visible(False)
             ix += 1
     fig2.subplots_adjust(
         left = 0.05,
@@ -371,7 +376,7 @@ if 2 in plot:
         right = 0.99,
         top = 0.98,
         wspace = 0.34,
-        hspace = 0.,
+        hspace = 0.04,
     )
 
 if 3 in plot:
@@ -387,38 +392,43 @@ if 3 in plot:
     ix = 0
     for r in range(nr):
         for c in range(nc):
-            ax3[r, c].plot(bl[:, :, ix], alpha=0.1)
-            for p, ls in zip([2.5, 16, 50, 84, 97.5], ['-.','--','-','--','-.']):
-                ax3[r, c].axhline(
-                    np.percentile(bl[:, :, ix], p, axis=1)[n_steps//2:].mean(),
-                    color='blue',
-                    lw=2,
-                    ls=ls,
-                )
-            for p in [2.5, 16, 50, 84, 97.5]:
-                ax3[r, c].plot(
-                    np.percentile(bl[:, :, ix], p, axis=1),
-                    color='black',
-                    lw=2,
-                    ls='--',
-                )
-            ax3[r, c].set_ylabel(blobs_names[ix])
-            curr_ylim = ax3[r, c].get_ylim()
-            if 'drv_gauss_priors' in ini.keys():
-                if blobs_names[ix] in drv_pri_dict.keys():
-                    pri = drv_pri_dict[blobs_names[ix]]
-                    for m, ls in zip([-1.,0.,1.],['--','-','--']):
-                        val = pri[0] + m * pri[1]
-                        if (curr_ylim[0] <= val <= curr_ylim[1]):
-                            ax3[r, c].axhline(val, ls=ls, color='orange')
+            if ix < n_blobs:
+                ax3[r, c].plot(bl[:, :, ix], alpha=0.1)
+                for p, ls in zip([2.5, 16, 50, 84, 97.5], ['-.','--','-','--','-.']):
+                    ax3[r, c].axhline(
+                        np.percentile(bl[:, :, ix], p, axis=1)[n_steps//2:].mean(),
+                        color='blue',
+                        lw=2,
+                        ls=ls,
+                    )
+                for p in [2.5, 16, 50, 84, 97.5]:
+                    ax3[r, c].plot(
+                        np.percentile(bl[:, :, ix], p, axis=1),
+                        color='black',
+                        lw=2,
+                        ls='--',
+                    )
+                ax3[r, c].set_ylabel(blobs_names[ix])
+                curr_ylim = ax3[r, c].get_ylim()
+                if 'drv_gauss_priors' in ini.keys():
+                    if blobs_names[ix] in drv_pri_dict.keys():
+                        pri = drv_pri_dict[blobs_names[ix]]
+                        for m, ls in zip([-1.,0.,1.],['--','-','--']):
+                            val = pri[0] + m * pri[1]
+                            if (curr_ylim[0] <= val <= curr_ylim[1]):
+                                ax3[r, c].axhline(val, ls=ls, color='orange')
+                for label in ax3[r, c].get_yticklabels():
+                    label.set_rotation(45)
+            else:
+                ax3[r, c].set_visible(False)
             ix += 1
-    fig2.subplots_adjust(
+    fig3.subplots_adjust(
         left = 0.05,
         bottom = 0.03,
         right = 0.99,
         top = 0.98,
         wspace = 0.34,
-        hspace = 0.,
+        hspace = 0.04,
     )
 
 if 4 in plot:
@@ -450,6 +460,7 @@ if 5 in plot:
     ax5.set_ylabel("Mean acceptance rate")
 
 if args.copy is not None:
+    print("Cleaning up temporary file %s" % fname)
     os.system('rm %s' % fname)
 
 plt.show()
