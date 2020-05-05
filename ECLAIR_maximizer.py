@@ -16,7 +16,9 @@ if not ini['continue_chain']:
 
 
 ### Print the output path root
-print('Starting MCMC in %s' % ini['output_root'])
+print('#'*(36+len(ini['output_root'])))
+print('### Starting maximizing MCMC in %s ###' % ini['output_root'])
+print('#'*(36+len(ini['output_root'])))
 
 
 ### Import requested variant of class python wrapper
@@ -160,8 +162,6 @@ n_dim = len(ini['var_par'])
 n_steps = ini['n_steps']
 thin_by = ini['thin_by']
 n_walkers = ini['n_walkers']
-if ini['n_walkers_type'] == 'prop_to':
-    n_walkers *= len(ini['var_par'])
 
 
 ### Randomize initial walkers positions according to "start" & "width" columns in ini file
@@ -188,8 +188,6 @@ elif ini['input_type'] == 'text_chain':
         ignore_errors=True)
     in_names = [par[1] for par in in_ini['var_par']]
     in_nw = in_ini['n_walkers']
-    if in_ini['n_walkers_type'] == 'prop_to':
-        in_nw *= len(in_ini['var_par'])
     # Get requested sample from chain
     input_p = np.loadtxt(ini['input_fname'] + '.txt')[:, 2:len(in_names)+2]
     input_p = input_p.reshape(-1, in_nw, len(in_names))[ini['ch_start'], :, :]
@@ -244,6 +242,7 @@ elif ini['output_format'] == 'HDF5':
     backend = emcee.backends.HDFBackend(ini['output_root'] + '.h5')
     if not ini['continue_chain']:
         backend.reset(n_walkers, n_dim)
+    open(ini['output_root'] + '.lock', 'w').close() # creates empty lock file
 
 
 ### Parameters controlling the minimization
@@ -286,6 +285,7 @@ if (__name__ == "__main__") & (not ini['debug_mode']):
                             result.blobs.view(dtype=np.float64).reshape(n_walkers, -1),
                         ))
                     )
+            # Print progress
             ct += 1
             print('Current :')
             print('> temperature step : %s of %s' % (i + 1, n_T))
@@ -295,6 +295,8 @@ if (__name__ == "__main__") & (not ini['debug_mode']):
                 pos, lnl, blob, dum = result
                 current_temp /= fact_T
                 break
+    if ini['output_format'] == 'HDF5':
+        os.remove(ini['output_root'] + '.lock') # remove lock file
     if ini['parallel'][0] == 'MPI':
         pool.close()
         sys.exit()
