@@ -48,7 +48,7 @@ parser.add_argument(
     action='store',
     nargs=1,
     help='list of plots to produce; argument should be a list of\n'
-         'comma-separated numbers.\n'
+         'comma-separated parameter indexes.\n'
          'List of possible plots:\n'
          '1 : -log(likelihood) values for all walkers along chain\n'
          '2 : parameters values for all walkers along chain\n'
@@ -86,6 +86,15 @@ parser.add_argument(
     help='Thin the walkers so as to keep only every int(N)th walker.\n'
          '> Default: 1 (no walker thinning)'
 )
+
+parser.add_argument(
+    '-og',
+    '--output-getdist',
+    action='store_true',
+    help='Outputs a getdist-formatted version of the chains with\n'
+         'same root file names.\n'
+)
+
 args = parser.parse_args()
 
 
@@ -117,7 +126,6 @@ if args.copy is not None: # Temp copy path
         cp_path = os.path.dirname(os.path.realpath(sys.argv[0]))
     else:
         cp_path = os.path.realpath(args.copy)
-
 
 keep = [] # Parameter list
 if args.keep is not None:
@@ -159,8 +167,6 @@ if args.plot is not None:
             print("Unrecognised plot option %s, ignored." % p)
         else:
             plot.append(p)
-else:
-    plot = [1]
 
 if args.burn_in is None: # Burn-in
     burn_is_float = False
@@ -218,7 +224,8 @@ else:
 
 # Read chain content
 if ftype == "HDF5":
-    ini_fname = input_fname[:-3] + '.ini'
+    ini_fname_nosuffix = input_fname[:-3]
+    ini_fname = ini_fname_nosuffix + '.ini'
     ini = parse_ini_file(ini_fname, silent_mode=True)
     par_names = np.array([par[1] for par in ini['var_par']])
     reader = emcee.backends.HDFBackend(fname, read_only=True)
@@ -230,7 +237,8 @@ if ftype == "HDF5":
     n_steps, n_walkers, n_par = ch.shape
     bl = bl.view(dtype=np.float64).reshape(n_steps, n_walkers, -1)
 else:
-    ini_fname = input_fname[:-4] + '.ini'
+    ini_fname_nosuffix = input_fname[:-4]
+    ini_fname = ini_fname_nosuffix + '.ini'
     ini = parse_ini_file(ini_fname, silent_mode=True)
     par_names = np.array([par[1] for par in ini['var_par']])
     n_par = len(ini['var_par'])
@@ -277,7 +285,7 @@ ln = ln[:, ::thinw]
 ch = ch[:, ::thinw, :]
 bl = bl[:, ::thinw, :]
 print('Kept %s walkers (out of %s) after walker thinning' % (ln.shape[1], n_walkers))
-print('>>> Total samples used : %s' % (ln.shape[0] * ln.shape[1]))
+print('>>> Total samples used : %s (out of %s)' % (ln.shape[0] * ln.shape[1], n_walkers * n_steps))
 
 # Parameter selection
 if args.keep is None:
@@ -290,14 +298,32 @@ else:
     par_names = par_names[keep[g]]
     lbs = lbs[keep[g]]
     ubs = ubs[keep[g]]
-print('>>> Total number of parameters : %s' % ch.shape[2])
+print('>>> Total number of parameters : %s (out of %s)' % (ch.shape[2], n_par))
 n_steps, n_walkers, n_par = ch.shape
 
 # Check for temperature
 if 'temperature' in blobs_names:
     temp = bl[:, :, blobs_names.index('temperature')]
+    print('Last temperature: %s' % temp[-1, -1])
 else:
     temp = np.ones(ln.shape)
+
+
+####################################################################################
+####################################################################################
+
+# If requested, make getdist-formatted version of the chain
+# if args.output_getdist is not None:
+if args.og:
+    from getdist.mcsamples import MCSamples
+    gdist = MCSamples(
+        ranges={par_names[i]: [lbs[i], ubs[i]] for i in range(n_par)},
+        samples=np.dstack((ch, bl)).reshape(-1, n_par + n_blobs),
+        loglikes=(-ln).reshape(-1),
+        names=list(par_names) + blobs_names,
+        labels=list(par_names) + blobs_names,
+    )
+    gdist.saveAsText(ini_fname_nosuffix + '_gdist')
 
 
 ####################################################################################
@@ -463,4 +489,5 @@ if args.copy is not None:
     print("Cleaning up temporary file %s" % fname)
     os.system('rm %s' % fname)
 
-plt.show()
+if len(plot) > 0:
+    plt.show()
