@@ -25,10 +25,10 @@ parser.add_argument(
 parser.add_argument(
     '-c',
     '--copy',
-    metavar='PATH',
+    metavar='DIR',
     action='store',
-    help='Make a temporary copy of the chain in PATH before analyzing.\n'
-         '> Default PATH: current directory.',
+    help='Make a temporary copy of the chain in DIR before analyzing.\n'
+         '> Default DIR: current directory.',
 )
 parser.add_argument(
     '-k',
@@ -38,25 +38,8 @@ parser.add_argument(
     nargs=1,
     help='Keep only some parameters for analysis; argument should\n'
          'be a list of comma-separated parameter indexes.\n'
-         '> Example: "1,5,7-8"  (hyphens indicate a range)\n'
+         '> Example: "0,5,7-8"  (hyphens indicate a range)\n'
          '> Default: keep all parameters.',
-)
-parser.add_argument(
-    '-p',
-    '--plot',
-    metavar='LIST',
-    action='store',
-    nargs=1,
-    help='list of plots to produce; argument should be a list of\n'
-         'comma-separated parameter indexes.\n'
-         'List of possible plots:\n'
-         '1 : -log(likelihood) values for all walkers along chain\n'
-         '2 : parameters values for all walkers along chain\n'
-         '3 : derived parameters for all walkers along chain\n'
-         '4 : mean acceptance rate for each walker as chain progresses\n'
-         '5 : acceptance rate averaged over walkers at each chain step\n'
-         '> Example: "1,2,4-6"  (hyphens indicate a range)\n'
-         '> Default: 1 (likelihood plot only)',
 )
 parser.add_argument(
     '-b',
@@ -86,13 +69,29 @@ parser.add_argument(
     help='Thin the walkers so as to keep only every int(N)th walker.\n'
          '> Default: 1 (no walker thinning)'
 )
-
 parser.add_argument(
     '-og',
     '--output-getdist',
     action='store_true',
     help='Outputs a getdist-formatted version of the chains with\n'
          'same root file names.\n'
+)
+parser.add_argument(
+    '-p',
+    '--plot',
+    metavar='LIST',
+    action='store',
+    nargs=1,
+    help='list of plots to produce; argument should be a list of\n'
+         'comma-separated parameter indexes.\n'
+         'List of possible plots:\n'
+         '1 : -log(likelihood) values for all walkers along chain\n'
+         '2 : parameters values for all walkers along chain\n'
+         '3 : derived parameters for all walkers along chain\n'
+         '4 : mean acceptance rate for each walker as chain progresses\n'
+         '5 : acceptance rate averaged over walkers at each chain step\n'
+         '> Example: "1,2,4-6"  (hyphens indicate a range)\n'
+         '> Default: 1 (likelihood plot only)',
 )
 
 args = parser.parse_args()
