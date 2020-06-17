@@ -27,8 +27,7 @@ parser.add_argument(
     '--copy',
     metavar='DIR',
     action='store',
-    help='Make a temporary copy of the chain in DIR before analyzing.\n'
-         '> Default DIR: current directory.',
+    help='Make a temporary copy of the chain in DIR before analyzing.'
 )
 parser.add_argument(
     '-k',
