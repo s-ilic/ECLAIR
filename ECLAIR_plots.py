@@ -80,7 +80,7 @@ parser.add_argument(
     '--dict-var-names',
     metavar='DIR',
     action='store',
-    help='Provide a dictionary (two-column text file) for switching'
+    help='Provide a dictionary (two-column text file) for switching\n'
          'the names of the variables.'
 )
 parser.add_argument(
@@ -88,8 +88,8 @@ parser.add_argument(
     '--dict-labels',
     metavar='DIR',
     action='store',
-    help='Provide a dictionary (two-column text file) for defining'
-         'parameter labels for plots.'
+    help='Provide a dictionary (two-column text file) for defining\n'
+         'parameter labels for plots.\n'
          '> Default: use the variable names'
 )
 parser.add_argument(
@@ -263,7 +263,7 @@ else:
     fname = input_fname
 
 # Read chain content
-ini_fname_nosuffix = input_fname.strip(".h5").strip(".txt")
+ini_fname_nosuffix = input_fname.replace(".h5", "").replace(".txt", "")
 ini_fname = ini_fname_nosuffix + '.ini'
 ini = parse_ini_file(ini_fname, silent_mode=True)
 par_names = np.array(
