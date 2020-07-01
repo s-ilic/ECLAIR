@@ -312,7 +312,7 @@ else:
 
 # If requested, make getdist-formatted version of the chain
 # if args.output_getdist is not None:
-if args.og:
+if args.output_getdist:
     from getdist.mcsamples import MCSamples
     gdist = MCSamples(
         ranges={par_names[i]: [lbs[i], ubs[i]] for i in range(n_par)},
