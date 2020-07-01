@@ -429,7 +429,7 @@ if 2 in plot:
                         lw=2,
                         ls='--',
                     )
-                ax2[r, c].set_ylabel(par_names[ix])
+                ax2[r, c].set_ylabel(par_labels[ix])
                 curr_ylim = ax2[r, c].get_ylim()
                 if (np.isfinite(lbs[ix])) & (lbs[ix] >= curr_ylim[0]):
                     ax2[r, c].axhline(lbs[ix], ls='--', color='red')
@@ -485,7 +485,7 @@ if 3 in plot:
                         lw=2,
                         ls='--',
                     )
-                ax3[r, c].set_ylabel(blobs_names[ix])
+                ax3[r, c].set_ylabel(blobs_labels[ix])
                 curr_ylim = ax3[r, c].get_ylim()
                 if 'drv_gauss_priors' in ini.keys():
                     if blobs_names[ix] in drv_pri_dict.keys():
