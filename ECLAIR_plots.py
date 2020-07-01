@@ -76,6 +76,23 @@ parser.add_argument(
          'same root file names.\n'
 )
 parser.add_argument(
+    '-dvn',
+    '--dict-var-names',
+    metavar='DIR',
+    action='store',
+    help='Provide a dictionary (two-column text file) for switching'
+         'the names of the variables.'
+)
+parser.add_argument(
+    '-dl',
+    '--dict-labels',
+    metavar='DIR',
+    action='store',
+    help='Provide a dictionary (two-column text file) for defining'
+         'parameter labels for plots.'
+         '> Default: use the variable names'
+)
+parser.add_argument(
     '-p',
     '--plot',
     metavar='LIST',
@@ -201,6 +218,31 @@ else:
     else:
         thinw = int(args.thin_walk[0])
 
+dvn = {}
+if args.dict_var_names is not None:
+    with open(args.dict_var_names, 'r') as f:
+        lines = f.readlines()
+    for line in lines:
+        spline = line.split()
+        if len(spline) == 2:
+            if spline[0] in dvn.keys():
+                raise ValueError("Duplicate in variable names dictionary:\n%s" % line)
+            dvn[spline[0]] = spline[1]
+        elif spline != []:
+            raise ValueError("Formatting error in variable names dictionary:\n%s" % line)
+
+dl = {}
+if args.dict_labels is not None:
+    with open(args.dict_labels, 'r') as f:
+        lines = f.readlines()
+    for line in lines:
+        spline = line.split()
+        if len(spline) == 2:
+            if spline[0] in dl.keys():
+                raise ValueError("Duplicate in labels names dictionary:\n%s" % line)
+            dl[spline[0]] = spline[1]
+        elif spline != []:
+            raise ValueError("Formatting error in labels names dictionary:\n%s" % line)
 
 ####################################################################################
 ####################################################################################
@@ -221,31 +263,42 @@ else:
     fname = input_fname
 
 # Read chain content
+ini_fname_nosuffix = input_fname.strip(".h5").strip(".txt")
+ini_fname = ini_fname_nosuffix + '.ini'
+ini = parse_ini_file(ini_fname, silent_mode=True)
+par_names = np.array(
+    [dvn[par[1]] if par[1] in dvn.keys() else par[1] for par in ini['var_par']]
+)
+par_labels = np.array(
+    [dl[par[1]] if par[1] in dl.keys() else par[1] for par in ini['var_par']]
+)
 if ftype == "HDF5":
-    ini_fname_nosuffix = input_fname[:-3]
-    ini_fname = ini_fname_nosuffix + '.ini'
-    ini = parse_ini_file(ini_fname, silent_mode=True)
-    par_names = np.array([par[1] for par in ini['var_par']])
     reader = emcee.backends.HDFBackend(fname, read_only=True)
     ln = reader.get_log_prob()
     ch = reader.get_chain()
     bl = reader.get_blobs()
-    blobs_names = list(bl.dtype.names)
+    blobs_names = np.array(
+        [dvn[n] if n in dvn.keys() else n for n in list(bl.dtype.names)]
+    )
+    blobs_labels = np.array(
+        [dl[n] if n in dl.keys() else n for n in list(bl.dtype.names)]
+    )
     n_blobs = len(blobs_names)
     n_steps, n_walkers, n_par = ch.shape
     bl = bl.view(dtype=np.float64).reshape(n_steps, n_walkers, -1)
 else:
-    ini_fname_nosuffix = input_fname[:-4]
-    ini_fname = ini_fname_nosuffix + '.ini'
-    ini = parse_ini_file(ini_fname, silent_mode=True)
-    par_names = np.array([par[1] for par in ini['var_par']])
     n_par = len(ini['var_par'])
     n_walkers = ini['n_walkers']
     with open(fname, 'r') as f:
         header = f.readline()
     all_names = [s.split(':')[1] for s in header[1:].split()]
     n_blobs = len(all_names) - n_par - 2
-    blobs_names = all_names[-n_blobs:]
+    blobs_names = np.array(
+        [dvn[n] if n in dvn.keys() else n for n in all_names[-n_blobs:]]
+    )
+    blobs_labels = np.array(
+        [dl[n] if n in dl.keys() else n for n in all_names[-n_blobs:]]
+    )
     tmp = np.loadtxt(fname)#.reshape(-1, n_walkers, len(all_names))
     ln = tmp[:, 1].reshape(-1, n_walkers)
     ch = tmp[:, 2:2+n_par].reshape(-1, n_walkers, n_par)
@@ -317,9 +370,9 @@ if args.output_getdist:
     gdist = MCSamples(
         ranges={par_names[i]: [lbs[i], ubs[i]] for i in range(n_par)},
         samples=np.dstack((ch, bl)).reshape(-1, n_par + n_blobs),
-        loglikes=(-ln).reshape(-1),
-        names=list(par_names) + blobs_names,
-        labels=list(par_names) + blobs_names,
+        loglikes=(-1.*ln).reshape(-1),
+        names=list(par_names) + list(blobs_names),
+        labels=list(par_labels) + list(blobs_labels),
     )
     gdist.saveAsText(ini_fname_nosuffix + '_gdist')
 
