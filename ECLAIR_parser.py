@@ -10,6 +10,33 @@ def is_number(s):
         return False
 
 
+def splt(s, sep=None, maxsplit=-1):
+    ctp = s.count('"')
+    if ctp == 0:
+        return s.split(sep, maxsplit)
+    if ctp % 2 == 1:
+        # return ValueError("Error: even number of quotes: %s" % s)
+        return None
+    tmp = s.split(sep, maxsplit)
+    fs = []
+    in_quote = False
+    store = ''
+    for t in tmp:
+        if ('"' in t) and not in_quote:
+            in_quote = True
+            store += t + ' '
+        elif ('"' in t) and in_quote:
+            in_quote = False
+            store += t
+            fs.append(store.replace('"',''))
+            store = ''
+        elif in_quote:
+            store += t + ' '
+        else:
+            fs.append(t)
+    return fs
+
+
 def parse_ini_file(fname, silent_mode=False):
 
     ### Strings containing all warnings and errors
@@ -27,10 +54,13 @@ def parse_ini_file(fname, silent_mode=False):
     flines = []
     options = []
     for line in lines:
-        sline = line.replace('\n','').split()
+        sline = splt(line.replace('\n',''))
+        if sline == None:
+            str_err += 'Error: odd number of quotes\n> %s\n' % line
+            error_ct += 1
         empty_line = sline == []
         is_comment = line[0] == '#'
-        if not empty_line and not is_comment:
+        if not empty_line and not is_comment and sline is not None:
             slines.append(sline)
             flines.append(line.replace('\n',''))
             options.append(sline[0])
@@ -411,7 +441,7 @@ def parse_ini_file(fname, silent_mode=False):
                         if tmp[0] not in out['array_var'].keys():
                             out['array_var'][tmp[0]] = 0
                 else:
-                    str_err += 'Wrong format for "constraint": \n> %s' % sline
+                    str_err += 'Wrong format for "constraint": \n> %s\n' % flines[ix]
                     error_ct += 1
         # Deal with likelihood
         elif sline[0] == 'likelihood':
@@ -422,12 +452,12 @@ def parse_ini_file(fname, silent_mode=False):
                 out['likelihoods'].append(sline[1])
         # Deal with deriv
         elif sline[0] == 'deriv':
-            fline = flines[ix].split(None, 2)
+            fline = splt(flines[ix])
             if len(fline) != 3:
-                str_err += 'Wrong number of arguments for "deriv".\n'
+                str_err += 'Wrong number of arguments for "deriv": \n> %s\n' % flines[ix]
                 error_ct += 1
             elif is_number(fline[1]) | is_number(fline[2]):
-                str_err += 'Wrong argument type for "deriv": \n> %s' % sline
+                str_err += 'Wrong argument type for "deriv": \n> %s\n' % flines[ix]
                 error_ct += 1
             else:
                 out['derivs'].append([fline[1], fline[2]])
@@ -438,7 +468,7 @@ def parse_ini_file(fname, silent_mode=False):
             good2 = not is_number(sline[1])
             good3 = all([is_number(x) for x in sline[2:]])
             if not (good1 & good2 & good3):
-                str_err += 'Wrong "var/var_class" format:\n%s' % '  '.join(sline)
+                str_err += 'Wrong "var/var_class" format:\n> %s\n' % flines[ix]
                 error_ct += 1
             else:
                 out['var_par'].append(sline[:2] + [float(x) for x in sline[2:]])
@@ -454,21 +484,15 @@ def parse_ini_file(fname, silent_mode=False):
             good2 = not is_number(sline[1])
             good3 = all([is_number(x) for x in sline[2:]])
             if not (good1 & good2 & good3):
-                str_err += 'Wrong "gauss_prior" format:\n%s' % '  '.join(sline)
+                str_err += 'Wrong "gauss_prior" format:\n> %s\n' % flines[ix]
                 error_ct += 1
             else:
                 out['gauss_priors'].append([sline[1]] + [float(x) for x in sline[2:]])
         # Deal with fix_class
         elif sline[0] == 'fix_class':
-            if sline[1] == 'output':
-                out['base_par_class']['output'] = ' '.join(sline[2:])
-                bpc_names.append(sline[1])
-            elif len(sline) != 3:
-                str_err += 'Wrong "fix_class" format:\n%s' % '  '.join(sline)
+            if len(sline) != 3:
+                str_err += 'Wrong "fix_class" format:\n> %s\n' % flines[ix]
                 error_ct += 1
-            elif sline[1] == 'non_linear':
-                out['base_par_class']['non linear'] = sline[2]
-                bpc_names.append(sline[1])
             elif is_number(sline[2]):
                 out['base_par_class'][sline[1]] = float(sline[2])
                 bpc_names.append(sline[1])
@@ -483,10 +507,10 @@ def parse_ini_file(fname, silent_mode=False):
         # Deal with fix
         elif sline[0] == 'fix':
             if len(sline) != 3:
-                str_err += 'Wrong "fix" format:\n%s' % '  '.join(sline)
+                str_err += 'Wrong "fix" format:\n> %s\n' % flines[ix]
                 error_ct += 1
             elif is_number(sline[1]) | (not is_number(sline[2])):
-                str_err += 'Wrong "fix" format:\n%s' % '  '.join(sline)
+                str_err += 'Wrong "fix" format:\n> %s\n' % flines[ix]
                 error_ct += 1
             else:
                 out['base_par_likes'][sline[1]] = float(sline[2])
@@ -517,18 +541,18 @@ def parse_ini_file(fname, silent_mode=False):
     ### Check for duplicate parameters
     for n in vp_names:
         if vp_names.count(n) > 1:
-            str_err += 'Duplicate "var" parameter: %s' % n
+            str_err += 'Duplicate "var" parameter: %s\n' % n
             error_ct +=1
         if (n in bpc_names) or (n in bpl_names):
             str_err += 'Error: parameter "%s" is both fixed and varying.\n' % n
             error_ct +=1
     for n in bpc_names:
         if bpc_names.count(n) > 1:
-            str_err += 'Duplicate "fix_class" parameter: %s' % n
+            str_err += 'Duplicate "fix_class" parameter: %s\n' % n
             error_ct +=1
     for n in bpl_names:
         if bpl_names.count(n) > 1:
-            str_err += 'Duplicate "fix" parameter: %s' % n
+            str_err += 'Duplicate "fix" parameter: %s\n' % n
             error_ct +=1
 
     ### Checks for parameter arrays
