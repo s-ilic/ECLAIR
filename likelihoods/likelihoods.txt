@@ -11,6 +11,12 @@ BAO data used in Planck 2015 papers as "external data", contains
 - BOSS LOWZ & CMASS DR10&11 from 1312.4877
 - SDSS DR7 MGS from 1409.3242
 
+"BAO_2018" :
+BAO data used in Planck 2018 papers as "external data", contains
+- 6DF from 1106.3366
+- SDSS DR7 MGS from 1409.3242
+- SDSS DR12 Consensus BAO data from 1607.03155
+
 "H0_HST" :
 H0 measurements from Riess et al. from 1103.2976
 

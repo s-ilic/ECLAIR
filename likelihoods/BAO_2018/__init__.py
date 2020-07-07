@@ -1,7 +1,7 @@
 import numpy as np
 
 
-# Redshift and measurements for for SDSS DR12 Consensus BAO data (1607.03155)
+# Redshift and measurements for SDSS DR12 Consensus BAO data (1607.03155)
 DR12_z = np.array([0.38, 0.38, 0.51, 0.51, 0.61, 0.61])
 DR12_data = np.array([1512.39, 81.2087, 1975.22, 90.9029, 2306.68, 98.9647])
 DR12_rsdrag_fid = 147.78
