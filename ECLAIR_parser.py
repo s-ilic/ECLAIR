@@ -15,26 +15,26 @@ def splt(s, sep=None, maxsplit=-1):
     if ctp == 0:
         return s.split(sep, maxsplit)
     if ctp % 2 == 1:
-        # return ValueError("Error: even number of quotes: %s" % s)
+        # return ValueError("Error: odd number of quotes: %s" % s)
         return None
-    tmp = s.split(sep, maxsplit)
-    fs = []
+    final_splt = []
+    tmp_str = ''
     in_quote = False
-    store = ''
-    for t in tmp:
-        if ('"' in t) and not in_quote:
+    for n in s:
+        if (n == '"') & (not in_quote):
+            if tmp_str.strip() != '':
+                final_splt += tmp_str.strip().split()
+            tmp_str = ''
             in_quote = True
-            store += t + ' '
-        elif ('"' in t) and in_quote:
+        elif (n == '"') & in_quote:
+            final_splt.append(tmp_str.strip())
+            tmp_str = ''
             in_quote = False
-            store += t
-            fs.append(store.replace('"',''))
-            store = ''
-        elif in_quote:
-            store += t + ' '
         else:
-            fs.append(t)
-    return fs
+            tmp_str += n
+    if tmp_str.strip() != '':
+        final_splt += tmp_str.strip().split()
+    return final_splt
 
 
 def parse_ini_file(fname, silent_mode=False):
