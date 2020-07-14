@@ -179,13 +179,13 @@ if ini['input_type'] == 'HDF5_chain':
         # Get parameters names from chain (from .ini file)
         in_ini = ECLAIR_parser.parse_ini_file(
             ini['input_fname'] + '.ini',
-            ignore_errors=True)
+            silent_mode=True)
         in_names = [par[1] for par in in_ini['var_par']]
 elif ini['input_type'] == 'text_chain':
     # Get parameters names and number of walkers from chain (from .ini file)
     in_ini = ECLAIR_parser.parse_ini_file(
         ini['input_fname'] + '.ini',
-        ignore_errors=True)
+        silent_mode=True)
     in_names = [par[1] for par in in_ini['var_par']]
     in_nw = in_ini['n_walkers']
     # Get requested sample from chain
