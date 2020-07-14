@@ -23,6 +23,7 @@ H0 measurements from Riess et al. from 1103.2976
 ##### "JLA" :
 Joint Light-curve Analysis Supernovae Sample from 1401.4064, unbinned version
 
+-------------
 
 ### Planck 2015 (from 1507.02704)
 
@@ -50,6 +51,7 @@ Planck 2015 CMB lensing likelihood, using T map-based lensing reconstruction
 ##### "Planck2015_lensTP" :
 Planck 2015 CMB lensing likelihood, using T and P map-based lensing reconstruction
 
+-------------
 
 ### Planck 2018 (from 1907.12875)
 
