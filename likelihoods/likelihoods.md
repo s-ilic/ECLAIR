@@ -1,84 +1,84 @@
-#---------------------------------------------------------------------------#
-# List of available likelihoods                                             #
-# (to be used as argument for the "likelihood" parameter in your .ini file) #
-#---------------------------------------------------------------------------#
+# List of available likelihoods
+##### (to be used as argument for the "likelihood" parameter in your .ini file)
+
+-------------
 
 ### Background measurements
 
-"BAO_2014" :
+##### "BAO_2014" :
 BAO data used in Planck 2015 papers as "external data", contains
 - 6DF from 1106.3366
 - BOSS LOWZ & CMASS DR10&11 from 1312.4877
 - SDSS DR7 MGS from 1409.3242
 
-"BAO_2018" :
+##### "BAO_2018" :
 BAO data used in Planck 2018 papers as "external data", contains
 - 6DF from 1106.3366
 - SDSS DR7 MGS from 1409.3242
 - SDSS DR12 Consensus BAO data from 1607.03155
 
-"H0_HST" :
+##### "H0_HST" :
 H0 measurements from Riess et al. from 1103.2976
 
-"JLA" :
+##### "JLA" :
 Joint Light-curve Analysis Supernovae Sample from 1401.4064, unbinned version
 
 
 ### Planck 2015 (from 1507.02704)
 
-"Planck2015_lowTT" :
+##### "Planck2015_lowTT" :
 Planck 2015 CMB low-ell T likelihood
 
-"Planck2015_lowTEB" :
+##### "Planck2015_lowTEB" :
 Planck 2015 CMB low-ell T/E/B likelihood
 
-"Planck2015_highTT" :
+##### "Planck2015_highTT" :
 Planck 2015 CMB high-ell TT likelihood, with full nuisance parameters
 
-"Planck2015_highTTlite" :
+##### "Planck2015_highTTlite" :
 Planck 2015 CMB high-ell TT likelihood, with nuisance parameters marginalized
 
-"Planck2015_highTTTEEE" :
+##### "Planck2015_highTTTEEE" :
 Planck 2015 CMB high-ell TT/TE/EE likelihood, with full nuisance parameters
 
-"Planck2015_highTTTEEElite" :
+##### "Planck2015_highTTTEEElite" :
 Planck 2015 CMB high-ell TT/TE/EE likelihood, with nuisance parameters marginalized
 
-"Planck2015_lensT" :
+##### "Planck2015_lensT" :
 Planck 2015 CMB lensing likelihood, using T map-based lensing reconstruction
 
-"Planck2015_lensTP" :
+##### "Planck2015_lensTP" :
 Planck 2015 CMB lensing likelihood, using T and P map-based lensing reconstruction
 
 
 ### Planck 2018 (from 1907.12875)
 
-"Planck2018_lowTT" :
+##### "Planck2018_lowTT" :
 Planck 2018 CMB low-ell T likelihood
 
-"Planck2018_lowEE" :
+##### "Planck2018_lowEE" :
 Planck 2018 CMB low-ell E likelihood
 
-"Planck2018_lowBB" :
+##### "Planck2018_lowBB" :
 Planck 2018 CMB low-ell B likelihood
 
-"Planck2018_lowEB" :
+##### "Planck2018_lowEB" :
 Planck 2018 CMB low-ell E/B likelihood
 
-"Planck2018_highTT" :
+##### "Planck2018_highTT" :
 Planck 2018 CMB high-ell TT likelihood, with full nuisance parameters
 
-"Planck2018_highTTlite" :
+##### "Planck2018_highTTlite" :
 Planck 2018 CMB high-ell TT likelihood, with nuisance parameters marginalized
 
-"Planck2018_highTTTEEE" :
+##### "Planck2018_highTTTEEE" :
 Planck 2018 CMB high-ell TT/TE/EE likelihood, with full nuisance parameters
 
-"Planck2018_highTTTEEElite" :
+##### "Planck2018_highTTTEEElite" :
 Planck 2018 CMB high-ell TT/TE/EE likelihood, with nuisance parameters marginalized
 
-"Planck2018_lensCMBdep" :
+##### "Planck2018_lensCMBdep" :
 Planck 2018 CMB lensing likelihood, using T and P map-based lensing reconstruction, with model-dependent correction
 
-"Planck2018_lensCMBmarg" :
+##### "Planck2018_lensCMBmarg" :
 Planck 2018 CMB lensing likelihood, using T and P map-based lensing reconstruction, marginalized over CMB power spectrum
