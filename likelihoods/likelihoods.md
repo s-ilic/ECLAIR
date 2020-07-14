@@ -1,4 +1,4 @@
-# List of available likelihoods
+## List of available likelihoods
 ##### (to be used as argument for the "likelihood" parameter in your .ini file)
 
 -------------
