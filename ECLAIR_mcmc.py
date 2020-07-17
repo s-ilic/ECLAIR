@@ -262,16 +262,16 @@ if (__name__ == "__main__") & (not ini['debug_mode']):
             n_finite = np.isfinite(result.log_prob).sum()
             if n_finite < 2:
                 raise ValueError(
-                    "Your chain cannot progress:"
-                    "less than 2 of your walkers are starting at a finite value of the posterior."
-                    "Please check if your starting positions are correct, and/or use"
+                    "Your chain cannot progress: "
+                    "less than 2 of your walkers are starting at a finite value of the posterior. "
+                    "Please check if your starting positions are correct, and/or use "
                     "debug mode to check your likelihoods."
                 )
             elif n_finite < (0.5 * n_walkers):
                 print(
-                    "Warning, your chain will take time to converge:"
-                    "only %s%% of your walkers are starting at a finite value of the posterior."
-                    "Please check if your starting positions are correct, and/or use"
+                    "Warning, your chain will take time to converge: "
+                    "only %s%% of your walkers are starting at a finite value of the posterior. "
+                    "Please check if your starting positions are correct, and/or use "
                     "debug mode to check your likelihoods." % (n_finite * 100. / n_walkers)
                 )
         # Always save the last MCMC step as input file for future chain
