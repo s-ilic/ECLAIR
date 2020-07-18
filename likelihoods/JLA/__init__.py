@@ -5,7 +5,7 @@ import numpy as np
 from scipy.linalg import cholesky, solve_triangular
 
 ### Path to JLA likelihood folder (i.e. the folder this file is in)
-path_to_data = os.path.dirname(os.path.realpath(sys.argv[0])) + '/JAM_likelihoods/JLA/'
+path_to_data = os.path.dirname(os.path.realpath(sys.argv[0])) + '/likelihoods/JLA/'
 
 ### Function loading and reshaping covariance matrices
 def load_mat(name):

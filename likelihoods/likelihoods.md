@@ -25,7 +25,7 @@ Joint Light-curve Analysis Supernovae Sample from 1401.4064, unbinned version
 
 -------------
 
-### Planck 2015 (from 1507.02704)
+### CMB: Planck 2015 (from 1507.02704)
 
 ##### "Planck2015_lowTT" :
 Planck 2015 CMB low-ell T likelihood
@@ -53,7 +53,7 @@ Planck 2015 CMB lensing likelihood, using T and P map-based lensing reconstructi
 
 -------------
 
-### Planck 2018 (from 1907.12875)
+### CMB: Planck 2018 (from 1907.12875)
 
 ##### "Planck2018_lowTT" :
 Planck 2018 CMB low-ell T likelihood
@@ -84,3 +84,22 @@ Planck 2018 CMB lensing likelihood, using T and P map-based lensing reconstructi
 
 ##### "Planck2018_lensCMBmarg" :
 Planck 2018 CMB lensing likelihood, using T and P map-based lensing reconstruction, marginalized over CMB power spectrum
+
+-------------
+
+### CMB: ACTPol lite DR4 (from 2007.07288 and 2007.07289)
+
+##### "ACTPol_lite_DR4_all" :
+ACTPol "lite" (marginalized over foreground nuisance parameters) likelihood for the DR4 release, over the full range of multipoles for the TT, TE, and EE spectra
+
+##### "ACTPol_lite_DR4_onlyTT" :
+ACTPol "lite" likelihood for the DR4 release, over the full range of multipoles for the TT spectrum
+
+##### "ACTPol_lite_DR4_onlyTE" :
+ACTPol "lite" likelihood for the DR4 release, over the full range of multipoles for the TE spectrum
+
+##### "ACTPol_lite_DR4_onlyEE" :
+ACTPol "lite" likelihood for the DR4 release, over the full range of multipoles for the EE spectrum
+
+##### "ACTPol_lite_DR4_for_Planck" :
+ACTPol "lite" likelihood for the DR4 release, over the restricted range of multipoles suitable for combination with the Planck CMB data, for the TT, TE, and EE spectra
