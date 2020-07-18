@@ -103,3 +103,10 @@ ACTPol "lite" likelihood for the DR4 release, over the full range of multipoles 
 
 ##### "ACTPol_lite_DR4_for_Planck" :
 ACTPol "lite" likelihood for the DR4 release, over the restricted range of multipoles suitable for combination with the Planck CMB data, for the TT, TE, and EE spectra
+
+-------------
+
+### CMB: Keck array/BICEP2
+
+##### "BK15" :
+Bicep/KECK 2018 likelihood corresponding to data release BK15
