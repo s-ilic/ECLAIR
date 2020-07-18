@@ -3,7 +3,7 @@ import pandas as pd
 import scipy.linalg as la
 import os, sys
 from functools import reduce
-import BK15_vars as Bv
+import .BK15_vars as Bv
 
 #################
 # Initialistion #

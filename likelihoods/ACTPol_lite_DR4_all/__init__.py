@@ -16,7 +16,7 @@ like = pyactlike.ACTPowerSpectrumData(
 
 ### ACTPol lite DR4 likelihood
 def get_loglike(class_input, likes_input, class_run):
-    ell = class_run.lensed_cl()['ell'][2:] 
+    ell = class_run.lensed_cl()['ell'][2:]
     f = ell * (ell + 1.) / 2. / np.pi
     dell_tt = f * class_run.lensed_cl()['tt'][2:] * 1e12 * class_run.T_cmb()**2.
     dell_te = f * class_run.lensed_cl()['te'][2:] * 1e12 * class_run.T_cmb()**2.
