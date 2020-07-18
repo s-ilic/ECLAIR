@@ -3,12 +3,11 @@ import pandas as pd
 import scipy.linalg as la
 import os, sys
 from functools import reduce
-import .BK15_vars as Bv
+from .BK15_vars import *
 
 #################
 # Initialistion #
 #################
-
 # Some variables
 path_to_data = os.path.dirname(os.path.realpath(sys.argv[0]))
 path_to_data += '/likelihoods/BK15/data/'
@@ -30,7 +29,7 @@ map_names_used = [
     'P217_B',
     'P353_B',
 ]
-map_fields_used = [Bv.map_fields[Bv.map_names.index(m)] for m in map_names_used]
+map_fields_used = [map_fields[map_names.index(m)] for m in map_names_used]
 nmaps = len(map_names_used)
 ncrossmaps = nmaps * (nmaps + 1) // 2
 flat_to_diag = np.tril_indices(nmaps)
@@ -41,7 +40,7 @@ diag_to_flat[flat_to_diag] = list(range(ncrossmaps))
 bandpasses = {}
 for key in map_names_used:
     bandpasses[key] = {
-        'field': Bv.map_fields[Bv.map_names.index(key)],
+        'field': map_fields[map_names.index(key)],
         'filename': 'bandpass_%s.txt' % key[:-2],
     }
 
@@ -82,11 +81,11 @@ def GetIndicesAndMask(crossmaplist):
     return flatindex, mask
 
 # Read window bins
-window_data = np.zeros((Bv.nbins, Bv.cl_lmax, ncrossmaps))
+window_data = np.zeros((nbins, cl_lmax, ncrossmaps))
 # Retrieve mask and index permutation of windows:
-indices, mask = GetIndicesAndMask(Bv.bin_window_in_order)
-for k in range(Bv.nbins):
-    windowfile = path_to_data + Bv.bin_window_files.replace('???',str(k+1))
+indices, mask = GetIndicesAndMask(bin_window_in_order)
+for k in range(nbins):
+    windowfile = path_to_data + bin_window_files.replace('???',str(k+1))
     tmp = pd.read_table(windowfile,comment='#',sep=' ',header=None, index_col=0).to_numpy()
     # Apply mask
     tmp = tmp[:,mask]
@@ -95,23 +94,23 @@ for k in range(Bv.nbins):
 
 #Read covmat fiducial
 # Retrieve mask and index permutation for a single bin.
-indices, mask = GetIndicesAndMask(Bv.covmat_cl)
+indices, mask = GetIndicesAndMask(covmat_cl)
 # Extend mask and indices. Mask just need to be copied, indices needs to be increased:
 superindices = []
 supermask = []
-for k in range(Bv.nbins):
+for k in range(nbins):
     superindices += [idx+k*ncrossmaps for idx in indices]
     supermask += list(mask)
 supermask = np.array(supermask)
 
 tmp = pd.read_table(
-    path_to_data + Bv.covmat_fiducial,
+    path_to_data + covmat_fiducial,
     comment='#', sep=' ', header=None, skipinitialspace=True).to_numpy()
 # Apply mask:
 tmp = tmp[:,supermask][supermask,:]
 # print('Covmat read with shape {}'.format(tmp.shape))
 # Store covmat in correct order
-covmat = np.zeros((Bv.nbins*ncrossmaps,Bv.nbins*ncrossmaps))
+covmat = np.zeros((nbins*ncrossmaps,nbins*ncrossmaps))
 for index_tmp, index_covmat in enumerate(superindices):
     covmat[index_covmat,superindices] = tmp[index_tmp,:]
 
@@ -134,7 +133,7 @@ def ReadMatrix(filename, crossmaps):
     # Create matrix for each bin and unpack A:
     Mlist = []
     # Loop over bins:
-    for k in range(Bv.nbins):
+    for k in range(nbins):
         M = np.zeros((nmaps,nmaps))
         Mflat = np.zeros((nmaps*(nmaps+1)//2))
         Mflat[indices] = A[k,:]
@@ -145,21 +144,21 @@ def ReadMatrix(filename, crossmaps):
 
 
 # Read noise:
-cl_noise_matrix = ReadMatrix(Bv.cl_noise_file,Bv.cl_noise_order)
+cl_noise_matrix = ReadMatrix(cl_noise_file,cl_noise_order)
 
 # Read Chat and perhaps add noise:
-cl_hat_matrix = ReadMatrix(Bv.cl_hat_file,Bv.cl_hat_order)
-if not Bv.cl_hat_includes_noise:
-    for k in range(Bv.nbins):
+cl_hat_matrix = ReadMatrix(cl_hat_file,cl_hat_order)
+if not cl_hat_includes_noise:
+    for k in range(nbins):
         cl_hat_matrix[k] += cl_noise_matrix[k]
 
 # Read cl_fiducial and perhaps add noise:
-cl_fiducial_sqrt_matrix = ReadMatrix(Bv.cl_fiducial_file,Bv.cl_fiducial_order)
-if not Bv.cl_fiducial_includes_noise:
-    for k in range(Bv.nbins):
+cl_fiducial_sqrt_matrix = ReadMatrix(cl_fiducial_file,cl_fiducial_order)
+if not cl_fiducial_includes_noise:
+    for k in range(nbins):
         cl_fiducial_sqrt_matrix[k] += cl_noise_matrix[k]
 # Now take matrix square root:
-for k in range(Bv.nbins):
+for k in range(nbins):
     cl_fiducial_sqrt_matrix[k] = la.sqrtm(cl_fiducial_sqrt_matrix[k])
 
 
@@ -220,7 +219,7 @@ def get_loglike(class_input, likes_input, class_run):
         return ((pl_int / pl0) / bandpass['th023'])
 
     ellpivot = 80.
-    ell = np.arange(1,Bv.cl_lmax+1)
+    ell = np.arange(1,cl_lmax+1)
 
     # Convenience variables: store the nuisance parameters in short named variables
     # for parname in self.use_nuisance:
@@ -258,10 +257,6 @@ def get_loglike(class_input, likes_input, class_run):
     ###############################
 
 
-    #Make names and fields into lists
-    map_names = map_names_used
-    map_fields = map_fields_used
-    nbins = Bv.nbins
     # Initialise Cls matrix to zero:
     Cls = np.zeros((nbins,nmaps,nmaps))
     # Initialise the X vector:
@@ -269,14 +264,14 @@ def get_loglike(class_input, likes_input, class_run):
     for i in range(nmaps):
         for j in range(i+1):
             #If EE or BB, add theoretical prediction including foreground:
-            if map_fields[i]==map_fields[j]=='E' or map_fields[i]==map_fields[j]=='B':
-                map1 = map_names[i]
-                map2 = map_names[j]
+            if map_fields_used[i]==map_fields_used[j]=='E' or map_fields_used[i]==map_fields_used[j]=='B':
+                map1 = map_names_used[i]
+                map2 = map_names_used[j]
                 dust = fdust[map1]*fdust[map2]
                 sync = fsync[map1]*fsync[map2]
                 dustsync = fdust[map1]*fsync[map2] + fdust[map2]*fsync[map1]
                 # if EE spectrum, multiply foregrounds by the EE/BB ratio:
-                if map_fields[i]=='E':
+                if map_fields_used[i]=='E':
                     dust = dust * EEtoBB_dust
                     sync = sync * EEtoBB_sync
                     dustsync = dustsync * np.sqrt(EEtoBB_dust*EEtoBB_sync)
@@ -299,3 +294,4 @@ def get_loglike(class_input, likes_input, class_run):
     # Compute chi squared
     chi2 = np.dot(X.T,np.dot(covmat_inverse,X))
     return -0.5*chi2
+'''
