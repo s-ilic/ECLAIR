@@ -294,4 +294,3 @@ def get_loglike(class_input, likes_input, class_run):
     # Compute chi squared
     chi2 = np.dot(X.T,np.dot(covmat_inverse,X))
     return -0.5*chi2
-'''
