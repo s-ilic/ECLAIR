@@ -1,4 +1,5 @@
 import pyactlike
+import numpy as np
 
 ### Some important variables ###
 use_tt = True
