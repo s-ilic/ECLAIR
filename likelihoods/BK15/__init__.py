@@ -187,10 +187,9 @@ def get_loglike(class_input, likes_input, class_run):
         return M
 
     # Recover Cl_s from CLASS
-    ell = class_run.lensed_cl()['ell'][1:]
-    fl = ell * (ell + 1.) / (2. * np.pi)
-    DlEE = fl * class_run.lensed_cl()['ee'][1:] * 1e12 * class_run.T_cmb()**2.,
-    DlBB = fl * class_run.lensed_cl()['bb'][1:] * 1e12 * class_run.T_cmb()**2.,
+    fl = class_run.lensed_cl()['ell'][1:cl_lmax+1] * (class_run.lensed_cl()['ell'][1:cl_lmax+1] + 1.) / (2. * np.pi)
+    DlEE = fl * class_run.lensed_cl()['ee'][1:cl_lmax+1] * 1e12 * class_run.T_cmb()**2.
+    DlBB = fl * class_run.lensed_cl()['bb'][1:cl_lmax+1] * 1e12 * class_run.T_cmb()**2.
 
     #################################
     # BEGIN Update foreground model #
