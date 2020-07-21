@@ -171,8 +171,8 @@ std_start = [par[5] for par in ini['var_par']]
 p_start = np.zeros((n_walkers, n_dim))
 for i in range(n_dim):
     p_start[:, i] = truncnorm.rvs(
-        uni_pri[i, 0],
-        uni_pri[i, 1],
+        (uni_pri[i, 0] - p0_start[i]) / std_start[i],
+        (uni_pri[i, 1] - p0_start[i]) / std_start[i],
         loc=p0_start[i],
         scale=std_start[i],
         size=n_walkers,
