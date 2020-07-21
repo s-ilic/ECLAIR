@@ -3,6 +3,7 @@ import sys
 import emcee
 import ECLAIR_parser
 import numpy as np
+from scipy.stats import truncnorm
 
 
 ### Parse the input ini file
@@ -167,7 +168,15 @@ n_walkers = ini['n_walkers']
 ### Randomize initial walkers positions according to "start" & "width" columns in ini file
 p0_start = [par[2] for par in ini['var_par']]
 std_start = [par[5] for par in ini['var_par']]
-p_start = emcee.utils.sample_ball(p0_start, std_start, n_walkers)
+p_start = np.zeros((n_walkers, n_dim))
+for i in range(n_dim):
+    p_start[:, i] = truncnorm.rvs(
+        uni_pri[i, 0],
+        uni_pri[i, 1],
+        loc=p0_start[i],
+        scale=std_start[i],
+        size=n_walkers,
+    )
 
 
 ### Read input file if provided and modify initial positions accordingly
