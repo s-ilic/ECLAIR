@@ -336,7 +336,7 @@ ln = ln[:, ::thinw]
 ch = ch[:, ::thinw, :]
 bl = bl[:, ::thinw, :]
 print('Kept %s walkers (out of %s) after walker thinning' % (ln.shape[1], n_walkers))
-print('>>> Total samples used : %s (out of %s)' % (ln.shape[0] * ln.shape[1], n_walkers * n_steps))
+print('>>> Total number of samples plotted : %s (out of %s)' % (ln.shape[0] * ln.shape[1], n_walkers * n_steps))
 
 # Parameter selection
 if args.keep is None:
@@ -347,9 +347,10 @@ if sum(g) == 0:
 else:
     ch = ch[:, :, keep[g]]
     par_names = par_names[keep[g]]
+    par_labels = par_labels[keep[g]]
     lbs = lbs[keep[g]]
     ubs = ubs[keep[g]]
-print('>>> Total number of parameters : %s (out of %s)' % (ch.shape[2], n_par))
+print('>>> Total number of parameters plotted : %s (out of %s)' % (ch.shape[2], n_par))
 n_steps, n_walkers, n_par = ch.shape
 
 # Check for temperature
