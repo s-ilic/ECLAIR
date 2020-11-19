@@ -287,7 +287,7 @@ if ftype == "HDF5":
         [dvn[n] if n in dvn.keys() else n for n in list(bl.dtype.names)]
     )
     blobs_labels = np.array(
-        [dl[n] if n in dl.keys() else n for n in list(bl.dtype.names)]
+        [dl[n] if n in dl.keys() else n for n in blobs_names]
     )
     n_blobs = len(blobs_names)
     n_steps, n_walkers, n_par = ch.shape
