@@ -127,7 +127,13 @@ else:
         & (args.copy is None)
     )
     if test:
-        raise ValueError("Chain %s is HDF5 and running; use the -c option to prevent I/O errors that could compromise your MCMC run." % args.file[0])
+        raise ValueError(
+            "Chain %s is HDF5 and running, judging from the existence on the .lock "
+            "file. If you are sure that your chain is not running, delete the .lock "
+            "file and retry. Otherwise, use the -c option (creating a temp copy of "
+            "the chain) to prevent I/O errors that could compromise"
+            "your MCMC run." % args.file[0]
+        )
     if args.file[0].endswith('.h5'):
         ftype = 'HDF5'
     elif args.file[0].endswith('.txt'):
@@ -270,7 +276,7 @@ par_names = np.array(
     [dvn[par[1]] if par[1] in dvn.keys() else par[1] for par in ini['var_par']]
 )
 par_labels = np.array(
-    [dl[par[1]] if par[1] in dl.keys() else par[1] for par in ini['var_par']]
+    [dl[pn] if pn in dl.keys() else pn for pn in par_names]
 )
 if ftype == "HDF5":
     reader = emcee.backends.HDFBackend(fname, read_only=True)
