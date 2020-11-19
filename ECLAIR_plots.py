@@ -303,7 +303,7 @@ else:
         [dvn[n] if n in dvn.keys() else n for n in all_names[-n_blobs:]]
     )
     blobs_labels = np.array(
-        [dl[n] if n in dl.keys() else n for n in all_names[-n_blobs:]]
+        [dl[n] if n in dl.keys() else n for n in blobs_names]
     )
     tmp = np.loadtxt(fname)#.reshape(-1, n_walkers, len(all_names))
     ln = tmp[:, 1].reshape(-1, n_walkers)
