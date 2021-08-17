@@ -361,7 +361,7 @@ n_steps, n_walkers, n_par = ch.shape
 
 # Check for temperature
 if 'temperature' in blobs_names:
-    temp = bl[:, :, blobs_names.index('temperature')]
+    temp = bl[:, :, list(blobs_names).index('temperature')]
     print('Last temperature: %s' % temp[-1, -1])
 else:
     temp = np.ones(ln.shape)
