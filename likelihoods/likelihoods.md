@@ -23,8 +23,17 @@ H0 measurements from Riess et al. from 1103.2976
 ##### "H0_R18" :
 H0 measurements from Riess et al. from 1801.01120
 
+##### "H0_R19" :
+H0 measurements from Riess et al. from 1903.07603
+
+##### "H0_F20" :
+H0 measurements from Freedman et al. from 2002.01550
+
 ##### "JLA" :
 Joint Light-curve Analysis Supernovae Sample from 1401.4064, unbinned version
+
+##### "Pantheon" :
+Combined Pantheon Supernovae Sample from 1710.00845
 
 -------------
 
