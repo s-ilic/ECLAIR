@@ -14,7 +14,7 @@ def load_mat(name):
     return tmp[1:].reshape((int(tmp[0]), int(tmp[0])))
 
 ### Loading the covariance matrices of the measurements
-mag_covmat = load_mat('sys_full_long.dat')
+mag_covmat = load_mat(path_to_data + 'sys_full_long.dat')
 
 ### Loading the light curve parameters
 lc_params = np.genfromtxt(path_to_data + 'lcparam_full_long.txt', names=True)
