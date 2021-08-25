@@ -402,7 +402,9 @@ def parse_ini_file(fname, silent_mode=False):
     out['drv_gauss_priors'] = []
     out['var_par'] = []
     out['array_var'] = {}
-    out['base_par_class'] = {}
+    out['base_par_class'] = {
+        'output':'', # background computation only by default
+    }
     out['base_par_likes'] = {}
     vp_names = []  # all varying parameter names
     bpc_names = [] # non-varying class parameters names
