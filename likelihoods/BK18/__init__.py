@@ -3,31 +3,30 @@ import pandas as pd
 import scipy.linalg as la
 import os, sys
 from functools import reduce
-from .BK15_vars import *
+from .BK18_vars import *
 
 #################
 # Initialistion #
 #################
 # Some variables
 path_to_data = os.path.dirname(os.path.realpath(sys.argv[0]))
-path_to_data += '/likelihoods/BK15/data/'
+path_to_data += '/likelihoods/BK18/data/'
 T_CMB = 2.72548        # CMB temperature
 h = 6.62606957e-34     # Planck's constant
 kB = 1.3806488e-23     # Boltzmann constant
 Ghz_Kelvin = h/kB*1e9  # GHz Kelvin conversion
 map_names_used = [
-    'BK15_95_B',
-    'BK15_150_B',
-    'BK15_220_B',
-    'W023_B',
-    'P030_B',
-    'W033_B',
-    'P044_B',
-    'P070_B',
-    'P100_B',
-    'P143_B',
-    'P217_B',
-    'P353_B',
+    'BK18_K95_B',
+    'BK18_150_B',
+    'BK18_220_B',
+    'BK18_B95e_B',
+    'W023e_B',
+    'P030e_B',
+    'W033e_B',
+    'P044e_B',
+    'P143e_B',
+    'P217e_B',
+    'P353e_B',
 ]
 map_fields_used = [map_fields[map_names.index(m)] for m in map_names_used]
 nmaps = len(map_names_used)
