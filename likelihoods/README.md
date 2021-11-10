@@ -1,5 +1,15 @@
-## List of available likelihoods
+# List of available likelihoods
 ##### (to be used as argument for the "likelihood" parameter in your .ini file)
+
+-------------
+
+## Table of contents
+
+- [Background measurements](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#background-measurements)
+- [CMB: Planck 2015](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#cmb-planck-2015-from-150702704)
+- [CMB: Planck 2018](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#cmb-planck-2018-from-190712875)
+- [CMB: ACTPol lite DR4](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#cmb-actpol-lite-dr4-from-200707288-and-200707289)
+- [CMB: Keck array/BICEP2](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#cmb-keck-arraybicep2)
 
 -------------
 
@@ -121,4 +131,7 @@ ACTPol "lite" likelihood for the DR4 release, over the restricted range of multi
 ### CMB: Keck array/BICEP2
 
 ##### "BK15" :
-Bicep/KECK 2018 likelihood corresponding to data release BK15
+Bicep/KECK 2018 likelihood corresponding to data release named BK15
+
+##### "BK18" :
+Bicep/KECK 2021 likelihood corresponding to data release named BK18
