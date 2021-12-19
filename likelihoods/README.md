@@ -10,6 +10,7 @@
 - [CMB: Planck 2018](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#cmb-planck-2018-from-190712875)
 - [CMB: ACTPol lite DR4](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#cmb-actpol-lite-dr4-from-200707288-and-200707289)
 - [CMB: Keck array/BICEP2](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#cmb-keck-arraybicep2)
+- [CMB: SPT](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#cmb-spt)
 
 -------------
 
