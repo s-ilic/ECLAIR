@@ -17,33 +17,33 @@
 
 ##### "BAO_2014" :
 BAO data used in Planck 2015 papers as "external data", contains
-- 6DF from 1106.3366
-- BOSS LOWZ & CMASS DR10&11 from 1312.4877
-- SDSS DR7 MGS from 1409.3242
+- 6DF from Beutler et al. ([arXiv:1106.3366](https://arxiv.org/abs/1106.3366))
+- BOSS LOWZ & CMASS DR10&11 from Anderson et al. ([arXiv:1312.4877](https://arxiv.org/abs/1312.4877))
+- SDSS DR7 MGS from Ross et al. ([arXiv:1409.3242](https://arxiv.org/abs/1409.3242))
 
 ##### "BAO_2018" :
 BAO data used in Planck 2018 papers as "external data", contains
-- 6DF from 1106.3366
-- SDSS DR7 MGS from 1409.3242
-- SDSS DR12 Consensus BAO data from 1607.03155
+- 6DF from Beutler et al. ([arXiv:1106.3366](https://arxiv.org/abs/1106.3366))
+- SDSS DR7 MGS Ross et al. ([arXiv:1409.3242](https://arxiv.org/abs/1409.3242))
+- SDSS DR12 Consensus BAO data from Alam et al. ([arXiv:1607.03155](https://arxiv.org/abs/1607.03155))
 
 ##### "H0_HST" :
-H0 measurements from Riess et al. from 1103.2976
+H0 measurements from Riess et al. ([arXiv:1103.2976](https://arxiv.org/abs/1103.2976))
 
 ##### "H0_R18" :
-H0 measurements from Riess et al. from 1801.01120
+H0 measurements from Riess et al. ([arXiv:1801.01120](https://arxiv.org/abs/1801.01120))
 
 ##### "H0_R19" :
-H0 measurements from Riess et al. from 1903.07603
+H0 measurements from Riess et al. ([arXiv:1903.07603](https://arxiv.org/abs/1903.07603))
 
 ##### "H0_F20" :
-H0 measurements from Freedman et al. from 2002.01550
+H0 measurements from Freedman et al. ([arXiv:2002.01550](https://arxiv.org/abs/2002.01550))
 
 ##### "JLA" :
-Joint Light-curve Analysis Supernovae Sample from 1401.4064, unbinned version
+Joint Light-curve Analysis Supernovae Sample from Betoule et al. ([arXiv:1401.4064](https://arxiv.org/abs/1401.4064)), unbinned version
 
 ##### "Pantheon" :
-Combined Pantheon Supernovae Sample from 1710.00845
+Combined Pantheon Supernovae Sample from Scolnic et al. ([arXiv:1710.00845](https://arxiv.org/abs/1710.00845))
 
 -------------
 
@@ -135,3 +135,10 @@ Bicep/KECK 2018 likelihood corresponding to data release named BK15
 
 ##### "BK18" :
 Bicep/KECK 2021 likelihood corresponding to data release named BK18
+
+-------------
+
+### CMB: SPT
+
+##### "SPT3G_2020":
+SPT 3G likelihood from Dutcher et al. ([arXiv:2101.01684](https://arxiv.org/abs/2101.01684))
