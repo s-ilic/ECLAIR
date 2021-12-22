@@ -10,12 +10,13 @@ def is_number(s):
         return False
 
 
+# Special string splitting function, which ignores the presence of
+# the separator character when it is between two double quotes
 def splt(s, sep=None, maxsplit=-1):
     ctp = s.count('"')
     if ctp == 0:
         return s.split(sep, maxsplit)
     if ctp % 2 == 1:
-        # return ValueError("Error: odd number of quotes: %s" % s)
         return None
     final_splt = []
     tmp_str = ''
