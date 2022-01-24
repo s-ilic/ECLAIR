@@ -401,6 +401,7 @@ def parse_ini_file(fname, silent_mode=False):
     out['derivs'] = []
     out['gauss_priors'] = []
     out['drv_gauss_priors'] = []
+    out['drv_uni_priors'] = []
     out['var_par'] = []
     out['array_var'] = {}
     out['base_par_class'] = {
@@ -424,7 +425,7 @@ def parse_ini_file(fname, silent_mode=False):
                 good2 = ' '.join(sline[1:]).count('=') == 1
                 if good1 & good2:
                     tmp_cst = sline[1:]
-                    for i in [0,2]:
+                    for i in range(len(tmp_cst)):
                         tmp_cst[i] = tmp_cst[i].replace("class", "class_input")
                         tmp_cst[i] = tmp_cst[i].replace("likes", "likes_input")
                         tmp_cst[i] = tmp_cst[i].replace("[","['")
@@ -491,6 +492,16 @@ def parse_ini_file(fname, silent_mode=False):
                 error_ct += 1
             else:
                 out['gauss_priors'].append([sline[1]] + [float(x) for x in sline[2:]])
+        # Deal with uni_prior
+        elif sline[0] == 'uni_prior':
+            good1 = len(sline) == 4
+            good2 = not is_number(sline[1])
+            good3 = all([is_number(x) for x in sline[2:]])
+            if not (good1 & good2 & good3):
+                str_err += 'Wrong "uni_prior" format:\n> %s\n' % flines[ix]
+                error_ct += 1
+            else:
+                out['drv_uni_priors'].append([sline[1]] + [float(x) for x in sline[2:]])
         # Deal with fix_class
         elif sline[0] == 'fix_class':
             if len(sline) != 3:
@@ -583,6 +594,12 @@ def parse_ini_file(fname, silent_mode=False):
     for der in out['derivs']:
         if  ('mPk' not in out['base_par_class']['output']) & ('sigma8' in der):
             str_err += 'sigma_8 asked as a derived parameter, but mPk not in output.\n'
+            error_ct +=1
+
+    ### Checks for uniform priors
+    for i, p in enumerate(out['drv_uni_priors']):
+        if p[0] not in (vp_names + drv_names):
+            str_err += 'Error: parameter %s has prior but is not an MCMC or derived parameter.\n' % p[0]
             error_ct +=1
 
     ### Checks for Gaussian priors
