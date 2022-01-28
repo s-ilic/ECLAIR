@@ -60,11 +60,12 @@ def parse_ini_file(fname, silent_mode=False):
             str_err += 'Error: odd number of quotes\n> %s\n' % line
             error_ct += 1
         empty_line = sline == []
-        is_comment = not line.strip()[0].isalpha()
-        if not empty_line and not is_comment and sline is not None:
-            slines.append(sline)
-            flines.append(line.replace('\n',''))
-            options.append(sline[0])
+        if not empty_line and sline is not None:
+            is_comment = not line.strip()[0].isalpha()
+            if not is_comment:
+                slines.append(sline)
+                flines.append(line.replace('\n',''))
+                options.append(sline[0])
 
     ### Deal with debug mode
     ct = options.count('debug_mode')
