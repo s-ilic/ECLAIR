@@ -573,6 +573,7 @@ def parse_ini_file(fname, silent_mode=False):
                 'temperature',
                 'stretch',
                 'which_class',
+                'which_sampler',
             ]
             if sline[0] not in known_other_options:
                 str_warn += 'Unrecognized option "%s". Ignored.\n' % sline[0]
