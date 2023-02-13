@@ -168,19 +168,13 @@ if ini['debug_mode']: # override: no parallelisation if in debug mode
 elif ini['parallel'][0] == 'multiprocessing':
     from multiprocessing import Pool
     pool = Pool(int(ini['parallel'][1])) # number of threads chosen by user
-# MPI parallel computing
+# MPI parallel computing via external schwimmbad module
 elif ini['parallel'][0] == 'MPI':
-    # via external schwimmbad module for emcee sampler
-    if which_sampler == 'emcee':
-        from schwimmbad import MPIPool
-        pool = MPIPool()
-        if not pool.is_master(): # Necessary bit for MPI
-            pool.wait()
-            sys.exit(0)
-    # via internal chain manager for zeus sampler
-    elif which_sampler == 'zeus':
-        from zeus import ChainManager
-        pool = ChainManager()
+    from schwimmbad import MPIPool
+    pool = MPIPool()
+    if not pool.is_master(): # Necessary bit for MPI
+        pool.wait()
+        sys.exit(0)
 
 
 ### Conveninent MCMC settings variables
