@@ -88,7 +88,7 @@ def parse_ini_file(fname, silent_mode=False):
 
     ### Deal with output format
     ct = options.count('output_format')
-    out['output_format'] = 'text'
+    out['output_format'] = 'text' # Default
     suffix = '.txt'
     if ct == 0:
         str_warn += '"output_format" not found. Assumed "text".\n'
@@ -343,27 +343,54 @@ def parse_ini_file(fname, silent_mode=False):
         else:
             out['temperature'] = float(slines[ix][1])
 
-    ### Deal with stretch
-    ct = options.count('stretch')
+    ### Deal with choice of MCMC sampler
+    ct = options.count('which_sampler')
     if ct == 0:
-        str_warn += '"stretch" not found, assuming default stretch of 2.\n'
-        out['stretch'] = 1
+        str_warn += '"which_sampler" not found, assuming emcee.\n'
+        out['which_sampler'] = 'emcee'
     elif ct > 2:
-        str_err += 'Multiple (%s) instances of "stretch" found.\n' % ct
+        str_err += 'Multiple (%s) instances of "which_sampler" found.\n' % ct
         error_ct += 1
     else:
-        ix = options.index('stretch')
+        ix = options.index('which_sampler')
         if len(slines[ix]) != 2:
-            str_err += 'Wrong number of arguments for "stretch".\n'
+            str_err += 'Wrong number of arguments for "which_sampler".\n'
             error_ct += 1
-        elif not is_number(slines[ix][1]):
-            str_err += 'Wrong argument type for "stretch".\n'
-            error_ct += 1
-        elif float(slines[ix][1]) <= 1:
-            str_err += 'Wrong value for "stretch": has to be > 1.\n'
+        elif slines[ix][1] not in ['emcee', 'zeus']:
+            str_err += 'Unrecognized sampler (%s): should be either emcee or zeus.\n' % slines[ix][1]
             error_ct += 1
         else:
-            out['stretch'] = float(slines[ix][1])
+            out['which_sampler'] = slines[ix][1]
+
+    ### Deal with options of MCMC sampler
+    if out['which_sampler'] == 'emcee':
+        ct = options.count('stretch')
+        if ct == 0:
+            str_warn += '"stretch" not found, assuming default stretch of 2.\n'
+            out['stretch'] = 2
+        elif ct > 2:
+            str_err += 'Multiple (%s) instances of "stretch" found.\n' % ct
+            error_ct += 1
+        else:
+            ix = options.index('stretch')
+            if len(slines[ix]) != 2:
+                str_err += 'Wrong number of arguments for "stretch".\n'
+                error_ct += 1
+            elif not is_number(slines[ix][1]):
+                str_err += 'Wrong argument type for "stretch".\n'
+                error_ct += 1
+            elif float(slines[ix][1]) <= 1:
+                str_err += 'Wrong value for "stretch": has to be > 1.\n'
+                error_ct += 1
+            else:
+                out['stretch'] = float(slines[ix][1])
+    elif out['which_sampler'] == 'zeus':
+        ct = options.count('stretch')
+        if ct != 0:
+            str_warn += '"stretch" parameter not available in zeus sampler, line ignored.\n'
+        if out['output_format'] == 'HDF5':
+            str_err += 'HDF5 support is not implemented yet for zeus sampler.\n'
+            error_ct += 1
 
     ### Deal with which_class
     ct = options.count('which_class')

@@ -1,6 +1,5 @@
 import os
 import sys
-import emcee
 import ECLAIR_parser
 import numpy as np
 from scipy.stats import truncnorm
@@ -25,6 +24,14 @@ print('#'*(36+len(ini['output_root'])))
 ### Import requested variant of class python wrapper
 which_class = ini['which_class']
 exec('import %s as classy' % which_class)
+
+
+### Import requested MCMC sampler
+which_sampler = ini['which_sampler']
+if which_sampler == 'emcee':
+    import emcee as MCMCsampler
+elif which_sampler == 'zeus':
+    import zeus as MCMCsampler
 
 
 ### Import requested likelihoods
@@ -145,18 +152,25 @@ def lnlike(p, temp):
 
 ### Import additional modules for parallel computing if requested
 pool = None
+if ini['debug_mode']: # override: no parallelisation if in debug mode
+    pass
 # Multithreading parallel computing via python-native multiprocessing module
-if (ini['parallel'][0] == 'multiprocessing') & (not ini['debug_mode']):
+elif ini['parallel'][0] == 'multiprocessing':
     from multiprocessing import Pool
     pool = Pool(int(ini['parallel'][1])) # number of threads chosen by user
-# MPI parallel computing via external schwimmbad module
-elif (ini['parallel'][0] == 'MPI') & (not ini['debug_mode']):
-    from schwimmbad import MPIPool
-    pool = MPIPool()
-    if not pool.is_master(): # Necessary bit for MPI
-        pool.wait()
-        sys.exit(0)
-
+# MPI parallel computing
+elif ini['parallel'][0] == 'MPI':
+    # via external schwimmbad module for emcee sampler
+    if which_sampler == 'emcee':
+        from schwimmbad import MPIPool
+        pool = MPIPool()
+        if not pool.is_master(): # Necessary bit for MPI
+            pool.wait()
+            sys.exit(0)
+    # via internal chain manager for zeus sampler
+    elif which_sampler == 'zeus':
+        from zeus import ChainManager
+        pool = ChainManager()
 
 ### Conveninent MCMC settings variables
 n_dim = len(ini['var_par'])
@@ -181,7 +195,7 @@ for i in range(n_dim):
 
 ### Read input file if provided and modify initial positions accordingly
 if ini['input_type'] == 'HDF5_chain':
-    with emcee.backends.HDFBackend(ini['input_fname'] + '.h5', read_only=True) as reader:
+    with MCMCsampler.backends.HDFBackend(ini['input_fname'] + '.h5', read_only=True) as reader:
         # Get requested sample from chain
         input_p = reader.get_chain()[ini['ch_start'], :, :].copy()
         in_nw = input_p.shape[0]
@@ -248,7 +262,7 @@ if ini['output_format'] == 'text':
                 '\n'
             )
 elif ini['output_format'] == 'HDF5':
-    backend = emcee.backends.HDFBackend(ini['output_root'] + '.h5')
+    backend = MCMCsampler.backends.HDFBackend(ini['output_root'] + '.h5')
     if not ini['continue_chain']:
         backend.reset(n_walkers, n_dim)
     open(ini['output_root'] + '.lock', 'w').close() # creates empty lock file
@@ -260,27 +274,41 @@ n_step_each_T = int(sys.argv[3])
 fact_T = float(sys.argv[4])
 
 
+### Additional arguments for sampler
+sampler_args = {}
+if which_sampler == 'emcee':
+    sampler_args["moves"] = MCMCsampler.moves.StretchMove(a=ini['stretch'])
+    sampler_args["backend"] = backend
+
+
 ### Do the minimization via simulated annealing
 if (__name__ == "__main__") & (not ini['debug_mode']):
-
     current_temp = ini['temperature']
     pos = p_start
     for i in range(n_T):
-        sampler = emcee.EnsembleSampler(
+        sampler = MCMCsampler.EnsembleSampler(
             n_walkers,
             n_dim,
             lnlike,
             args=(current_temp,),
-            moves=emcee.moves.StretchMove(a=ini['stretch']),
             pool=pool,
             backend=backend,
-            blobs_dtype=blobs_dtype,
+            **sampler_args,
         )
         ct = 0
         for result in sampler.sample(pos, iterations=n_steps, thin_by=thin_by):
-            # Always save the last MCMC step as input file for future chain
+            # Collect quantities depending on sampler
+            if which_sampler == "emcee":
+                result_coords = result.coords
+                result_log_prob = result.log_prob
+                result_blobs = result.blobs
+            elif which_sampler == "zeus":
+                result_coords = result[0]
+                result_log_prob = result[1]
+                result_blobs = result[2]
+            # Always save the last MCMC step as plain text input file for future chain
             np.savetxt(ini['output_root'] + '.input',
-                    np.hstack((result.coords, result.log_prob[:, None])),
+                    np.hstack((result_coords, result_log_prob[:, None])),
                     header=names + '  log_prob')
             # If not using the HDF5 format, save current state in plain text
             if ini['output_format'] == 'text':
@@ -289,9 +317,9 @@ if (__name__ == "__main__") & (not ini['debug_mode']):
                         output_file,
                         np.hstack((
                             np.arange(n_walkers)[:, None],
-                            result.log_prob[:, None],
-                            result.coords,
-                            result.blobs.view(dtype=np.float64).reshape(n_walkers, -1),
+                            result_log_prob[:, None],
+                            result_coords,
+                            result_blobs.view(dtype=np.float64).reshape(n_walkers, -1),
                         ))
                     )
             # Print progress
