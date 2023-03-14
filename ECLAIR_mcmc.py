@@ -41,20 +41,26 @@ for like_name in ini["likelihoods"]:
     exec(f"likes.append(likelihoods.{like_name}.get_loglike)")
 
 
-### Misc useful quantities
+### Various useful quantities
 # List of all variable names
 var_names = [p[1] for p in ini["var_par"]]
+
 # List of uniform priors ([lower, upper] bounds)
 uni_pri = np.array([[p[3], p[4]] for p in ini["var_par"]])
+
 # List of Gaussian priors ([mean, stddev])
 gauss_pri = np.array([[p[1], p[2]] for p in ini["gauss_priors"]])
+
 # List of indices of variables with Gaussian priors
 ix_gauss_pri = np.array([var_names.index(p[0]) for p in ini["gauss_priors"]])
+
 # List of names of derived parameters with Gaussian priors
 drv_gauss_pri = [n[0] for n in ini["drv_gauss_priors"]]
+
 # List of names of derived parameters with uniform priors
 drv_uni_pri = [n[0] for n in ini["drv_uni_priors"]]
-# "Bad result" to be returned by lnlike if evaluation fails in any way
+
+# "Bad result" to be returned by lnlike() if evaluation fails in any way
 bad_res = tuple([-np.inf] * (2 + len(likes) + len(ini["derivs"])))
 
 
