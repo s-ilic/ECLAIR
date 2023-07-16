@@ -35,10 +35,10 @@ elif which_sampler == "zeus":
 
 
 ### Import and store in list all requested log(likelihoods)
-likes = []
+lkl = []
 for like_name in ini["likelihoods"]:
     exec(f"import likelihoods.{like_name}")
-    exec(f"likes.append(likelihoods.{like_name}.get_loglike)")
+    exec(f"lkl.append(likelihoods.{like_name}.get_loglike)")
 
 
 ### Various useful quantities
@@ -61,7 +61,7 @@ drv_gauss_pri = [n[0] for n in ini["drv_gauss_priors"]]
 drv_uni_pri = [n[0] for n in ini["drv_uni_priors"]]
 
 # "Bad result" to be returned by lnlike() if evaluation fails in any way
-bad_res = tuple([-np.inf] * (2 + len(likes) + len(ini["derivs"])))
+bad_res = tuple([-np.inf] * (2 + len(lkl) + len(ini["derivs"])))
 
 
 ### Actual loglike function
@@ -80,14 +80,14 @@ def lnlike(p):
 
     # Create parameters dictionnary for class and likelihoods
     class_input = ini["base_par_class"].copy()
-    likes_input = ini["base_par_likes"].copy()
+    lkl_input = ini["base_par_lkl"].copy()
 
     # Loop over parameters
     for i, par in enumerate(ini["var_par"]):
         if par[0] == "var_class":
             class_input[par[1]] = p[i]
         else:
-            likes_input[par[1]] = p[i]
+            lkl_input[par[1]] = p[i]
 
     # Deal with constraints
     for cst in ini["constraints"]:
@@ -115,10 +115,10 @@ def lnlike(p):
         return bad_res
 
     # Compute likelihoods
-    lnls = [0.]*len(likes)
-    for i, like in enumerate(likes):
+    lnls = [0.]*len(lkl)
+    for i, like in enumerate(lkl):
         try:
-            lnls[i] = float(like(class_input, likes_input, class_run))
+            lnls[i] = float(like(class_input, lkl_input, class_run))
         except Exception as e:
             if ini["debug_mode"]:
                 print(e)
@@ -158,7 +158,7 @@ def lnlike(p):
     class_run.struct_cleanup()
     class_run.empty()
 
-    # Return log(likes*prior)/T, log(prior), log(likes), derivs
+    # Return log(lkl*prior)/T, log(prior), log(lkl), derivs
     res = [(sum(lnls) + lnp) / ini["temperature"], lnp] + lnls + derivs
     return tuple(res)
 
