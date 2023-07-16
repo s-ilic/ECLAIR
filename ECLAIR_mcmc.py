@@ -127,7 +127,7 @@ def lnlike(p):
             return bad_res
         if not np.isfinite(lnls[i]):
             if ini["debug_mode"]:
-                print(f"The likelihood '{ini['likelihoods'][i]}' is not finite.")
+                print(f"Likelihood '{ini['likelihoods'][i]}' is not finite.")
             class_run.struct_cleanup()
             class_run.empty()
             return bad_res
@@ -135,7 +135,9 @@ def lnlike(p):
     # Computed derived parameters if requested
     derivs = []
     if len(ini["derivs"]) > 0:
-        bg = class_run.get_background() # in case it is needed
+        # Collect background and thermodynamics structures
+        bg = class_run.get_background()
+        th = class_run.get_thermodynamics()
         for deriv in ini["derivs"]:
             exec(f"derivs.append({deriv[1]})")
             # Computed prior on derived parameter if requested
@@ -186,7 +188,7 @@ thin_by = ini["thin_by"]
 n_walkers = ini["n_walkers"]
 
 
-### Randomize initial walkers positions according to "start" & "width" columns in ini file
+### Randomize initial walkers using "start" & "width" columns in ini file
 p0_start = [par[2] for par in ini["var_par"]]
 std_start = [par[5] for par in ini["var_par"]]
 p_start = np.zeros((n_walkers, n_dim))
