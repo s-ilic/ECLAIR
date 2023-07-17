@@ -11,7 +11,7 @@ ini = ECLAIR_parser.parse_ini_file(ini_fname)
 
 
 ### If a new chain is started, create copy of the ini file in output folder
-if not ini["continue_chain"]:
+if not ini["continue_chain"] and not ini["debug_mode"]:
     ECLAIR_parser.copy_ini_file(ini_fname, ini)
 
 
@@ -241,16 +241,16 @@ blobs_names = "  ".join([b[0] for b in blobs_dtype])
 
 
 ### Initialize output file
-if not ini["continue_chain"]:
+if not ini["continue_chain"] and not ini["debug_mode"]:
     var_header = ["%s:%s" % (i + 2, n) for i, n in enumerate(var_names)]
     blobs_header = ["%s(d):%s" % (i + len(var_names) + 2, b[0])
                     for i, b in enumerate(blobs_dtype)]
     with open(f"{ini['output_root']}.txt", "w") as output_file:
         output_file.write("# 0:walker_id  1:lnprob  "
-                          "  ".join(var_header)
-                          "  "
-                          "  ".join(blobs_header)
-                          "\n")
+                          + "  ".join(var_header)
+                          + "  "
+                          + "  ".join(blobs_header)
+                          + "\n")
 
 
 ### Do the actual MCMC

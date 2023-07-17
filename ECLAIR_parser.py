@@ -138,7 +138,7 @@ def parse_ini_file(fname, silent_mode=False):
                 out['input_fname'] = slines[ix][1]
                 if not isfile(out['input_fname']):
                     str_err += ('File chosen as "input_fname" (namely '
-                                f'{out['input_fname']}) does not exist.\n')
+                                f'{out["input_fname"]}) does not exist.\n')
                     out['input_fname'] = None
                     error_ct += 1
                 else:
@@ -151,8 +151,7 @@ def parse_ini_file(fname, silent_mode=False):
     ct = options.count('continue_chain')
     out['continue_chain'] = False
     if ct == 0:
-        str_err += '"continue_chain" not found. Assumed "no".\n'
-        error_ct += 1
+        str_warn += '"continue_chain" not found. Assumed "no".\n'
     elif ct > 1:
         str_err += f'Multiple ({ct}) instances of "continue_chain" found.\n'
         error_ct += 1
@@ -164,17 +163,19 @@ def parse_ini_file(fname, silent_mode=False):
         elif slines[ix][1] not in ['yes', 'no']:
             str_err += 'Argument for "continue_chain" should be yes or no.\n'
             error_ct += 1
-        elif slines[ix][1] == 'yes':
+        else:
             outname = out['output_root'] + '.txt'
-            if not isfile(outname):
-                str_err += (f"The chain you want to continue from ({outname}) "
-                            "does not exist.\n")
-                error_ct += 1
+            if slines[ix][1] == 'yes':
+                if not isfile(outname):
+                    str_err += ("The chain you want to continue from "
+                                f"({outname}) does not exist.\n")
+                    error_ct += 1
+                else:
+                    out['continue_chain'] = True
             else:
-                out['continue_chain'] = True
-        elif isfile(outname):
-            str_err += f'The output chain ({outname}) already exists.\n'
-            error_ct += 1
+                if isfile(outname):
+                    str_err += f'The output chain ({outname}) already exists.\n'
+                    error_ct += 1
 
     ### Deal with choice of MCMC sampler
     ct = options.count('which_sampler')
@@ -362,7 +363,7 @@ def parse_ini_file(fname, silent_mode=False):
         # Deal with options of MCMC sampler
         if sline[0] == 'sampler_kwarg':
             if len(sline) != 3:
-                str_err += 'Wrong number of arguments for "constraint":\n'
+                str_err += 'Wrong number of arguments for "sampler_kwarg":\n'
                 str_err += f'> {sline}\n'
                 error_ct += 1
             else:
@@ -375,40 +376,30 @@ def parse_ini_file(fname, silent_mode=False):
                     out['sampler_kwargs'].append([sline[1], tmp])
         # Deal with constraints
         elif sline[0] == 'constraint':
-            if len(sline) < 4:
-                str_err += 'Wrong number of arguments for "constraint":\n'
+            if fline.count("=") != 1:
+                str_err += 'More/less than 1 equal sign in "constraint":\n'
+                str_err += f'> {fline}\n'
+                error_ct += 1
+            elif len(fline.split("=")[0].split()) != 2:
+                str_err += 'Wrong syntax in "constraint":\n'
+                str_err += f'> {fline}\n'
+                error_ct += 1
+            elif fline.split("=")[1].strip() == '':
+                str_err += 'Wrong syntax in "constraint":\n'
                 str_err += f'> {fline}\n'
                 error_ct += 1
             else:
-                good1 = sline[2] == '='
-                good2 = ' '.join(sline[1:]).count('=') == 1
-                if good1 & good2:
-                    tmp_cst = sline[1:]
-                    for i in range(len(tmp_cst)):
-                        tmp_cst[i] = tmp_cst[i].replace("class", "class_input")
-                        tmp_cst[i] = tmp_cst[i].replace("lkl", "lkl_input")
-                        tmp_cst[i] = tmp_cst[i].replace("[","['")
-                        tmp_cst[i] = tmp_cst[i].replace("]","']")
-                    out['constraints'].append(' '.join(tmp_cst))
-                    tmp_cst_name = sline[1].replace('class','')
-                    tmp_cst_name = tmp_cst_name.replace('lkl','')
-                    tmp_cst_name = tmp_cst_name.replace('[','')
-                    tmp_cst_name = tmp_cst_name.replace(']','')
-                    cst_names.append(tmp_cst_name)
-                    if '_val_' in sline[1]:
-                        tmp_arr_name = sline[1]
-                        tmp_arr_name = tmp_arr_name.replace("class", "")
-                        tmp_arr_name = tmp_arr_name.replace("lkl", "")
-                        tmp_arr_name = tmp_arr_name.replace("[","")
-                        tmp_arr_name = tmp_arr_name.replace("]","")
-                        arr_names.append(tmp_arr_name)
-                        tmp = tmp_arr_name.split('_val_')
-                        if tmp[0] not in out['array_var'].keys():
-                            out['array_var'][tmp[0]] = 0
-                else:
-                    str_err += 'Wrong format for "constraint":\n'
-                    str_err += f'> {fline}\n'
-                    error_ct += 1
+                tmp_cst = fline.replace('constraint','').strip()
+                out['constraints'].append(tmp_cst)
+                tmp_cst_name = tmp_cst.split("=")[0].strip()
+                i1 = tmp_cst_name.index("[")
+                i2 = tmp_cst_name.index("]")
+                cst_names.append(tmp_cst_name[i1+2:i2-1])
+                if '_val_' in tmp_cst_name:
+                    arr_names.append(tmp_cst_name[i1+2:i2-1])
+                    tmp = tmp_cst_name[i1+2:i2-1].split('_val_')
+                    if tmp[0] not in out['array_var'].keys():
+                        out['array_var'][tmp[0]] = 0
         # Deal with likelihood
         elif sline[0] == 'likelihood':
             if len(sline) != 2:
