@@ -591,8 +591,10 @@ def copy_ini_file(fname, params):
         lines = f.readlines()
     with open(params['output_root'] + '.ini', 'w') as f:
         for line in lines:
-            empty_line = line.split() == []
-            is_comment = not line.strip()[0].isalpha()
-            if not empty_line and not is_comment:
-                f.write(line)
+            sline = splt(line.replace('\n',''))
+            empty_line = sline == []
+            if not empty_line and sline is not None:
+                is_comment = not line.strip()[0].isalpha()
+                if not is_comment:
+                    f.write(line)
     return None
