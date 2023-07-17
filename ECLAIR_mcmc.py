@@ -67,11 +67,11 @@ bad_res = tuple([-np.inf] * (2 + len(lkl) + len(ini["derivs"])))
 ### Actual loglike function
 def lnlike(p):
 
-    # Deal with uniform priors
+    # Deal with uniform priors on MCMC parameters
     if not np.all((uni_pri[:, 0] <= p) & (p <= uni_pri[:, 1])):
         return bad_res
 
-    # Deal with Gaussian priors
+    # Deal with Gaussian priors on MCMC parameters
     lnp = 0.
     if len(ini["gauss_priors"]) > 0:
         lnp = np.sum(
@@ -82,7 +82,7 @@ def lnlike(p):
     class_input = ini["base_par_class"].copy()
     lkl_input = ini["base_par_lkl"].copy()
 
-    # Loop over parameters
+    # Loop over MCMC parameters
     for i, par in enumerate(ini["var_par"]):
         if par[0] == "var_class":
             class_input[par[1]] = p[i]
@@ -171,7 +171,8 @@ if ini["debug_mode"]:
 # Multithreading parallel computing via python-native multiprocessing module
 elif ini["parallel"][0] == "multiprocessing":
     from multiprocessing import Pool
-    pool = Pool(int(ini["parallel"][1])) # number of threads chosen by user
+    n_threads = int(ini["parallel"][1]) # number of threads chosen by user
+    pool = Pool(n_threads)
 # MPI parallel computing via external schwimmbad module
 elif ini["parallel"][0] == "MPI":
     from schwimmbad import MPIPool
@@ -181,7 +182,7 @@ elif ini["parallel"][0] == "MPI":
         sys.exit(0)
 
 
-### Conveninent MCMC settings variables
+### MCMC settings variables (for convenience of use)
 n_dim = len(ini["var_par"])
 n_steps = ini["n_steps"]
 thin_by = ini["thin_by"]
@@ -193,6 +194,7 @@ p0_start = [par[2] for par in ini["var_par"]]
 std_start = [par[5] for par in ini["var_par"]]
 p_start = np.zeros((n_walkers, n_dim))
 for i in range(n_dim):
+    # Use truncnorm pdf just in case the prior "eats" too much of the Gaussian
     p_start[:, i] = truncnorm.rvs(
         (uni_pri[i, 0] - p0_start[i]) / std_start[i],
         (uni_pri[i, 1] - p0_start[i]) / std_start[i],
@@ -203,35 +205,17 @@ for i in range(n_dim):
 
 
 ### Read input file if provided and modify initial positions accordingly
-if ini["input_type"] == "HDF5_chain":
-    with MCMCsampler.backends.HDFBackend(f"{ini['input_fname']}.h5", read_only=True) as reader:
-        # Get requested sample from chain
-        input_p = reader.get_chain()[ini["ch_start"], :, :].copy()
-        in_nw = input_p.shape[0]
-        # Get parameters names from chain (from .ini file)
-        in_ini = ECLAIR_parser.parse_ini_file(
-            f"{ini['input_fname']}.ini",
-            silent_mode=True)
-        in_names = [par[1] for par in in_ini["var_par"]]
-elif ini["input_type"] == "text_chain":
+if ini["input_fname"] is not None:
     # Get parameters names and number of walkers from chain (from .ini file)
     in_ini = ECLAIR_parser.parse_ini_file(
-        f"{ini['input_fname']}.ini",
+        f"{ini['input_fname'][:-4]}.ini",
         silent_mode=True)
     in_names = [par[1] for par in in_ini["var_par"]]
     in_nw = in_ini["n_walkers"]
     # Get requested sample from chain
-    input_p = np.loadtxt(f"{ini['input_fname']}.txt")[:, 2:len(in_names)+2]
+    input_p = np.loadtxt(ini['input_fname'])[:, 2:len(in_names)+2]
     input_p = input_p.reshape(-1, in_nw, len(in_names))[ini["ch_start"], :, :]
-elif ini["input_type"] == "walkers":
-    # Get input walkers positions from file and their number
-    input_p = np.loadtxt(ini["input_fname"])
-    in_nw = input_p.shape[0]
-    # Get parameters name from first line of input file
-    with open(ini["input_fname"]) as f:
-        in_names = f.readline()[1:].split()
-if ini["input_type"] is not None:
-    # Look for current chain parameters in input file
+    # Find which current chain parameters are in provided input file
     ix_in_names = []
     for name in var_names:
         if name not in in_names:
@@ -241,11 +225,11 @@ if ini["input_type"] is not None:
         else:
             ix_in_names.append(in_names.index(name))
     # Fill up the intial walkers positions using p_start as a basis
-    for n in range(n_walkers):
+    for nw in range(n_walkers):
         for i, ix in enumerate(ix_in_names):
-            # Replace in p_start only the parameters present in input file
+            # In p_start, replace only the parameters present in input file
             if ix != -1:
-                    p_start[n, i] = input_p[n % in_nw, ix]
+                p_start[nw, i] = input_p[nw % in_nw, ix]
 
 
 ### Prepare some inputs for the MCMC
@@ -257,29 +241,16 @@ blobs_names = "  ".join([b[0] for b in blobs_dtype])
 
 
 ### Initialize output file
-if ini["output_format"] == "text":
-    backend = None
-    if not ini["continue_chain"]:
-        with open(f"{ini['output_root']}.txt", "w") as output_file:
-            output_file.write(
-                "# 0:walker_id  1:lnprob  " +
-                "  ".join(["%s:%s" % (i + 2, n) for i, n in enumerate(var_names)]) +
-                "  " +
-                "  ".join(["%s(d):%s" % (i + len(var_names) + 2, b[0]) for i, b in enumerate(blobs_dtype)]) +
-                "\n"
-            )
-elif ini["output_format"] == "HDF5":
-    backend = MCMCsampler.backends.HDFBackend(f"{ini['output_root']}.h5")
-    if not ini["continue_chain"]:
-        backend.reset(n_walkers, n_dim)
-    open(f"{ini['output_root']}.lock", "w").close() # creates empty lock file
-
-
-### Additional arguments for sampler
-sampler_args = {}
-if which_sampler == "emcee":
-    sampler_args["moves"] = MCMCsampler.moves.StretchMove(a=ini["stretch"])
-    sampler_args["backend"] = backend
+if not ini["continue_chain"]:
+    var_header = ["%s:%s" % (i + 2, n) for i, n in enumerate(var_names)]
+    blobs_header = ["%s(d):%s" % (i + len(var_names) + 2, b[0])
+                    for i, b in enumerate(blobs_dtype)]
+    with open(f"{ini['output_root']}.txt", "w") as output_file:
+        output_file.write("# 0:walker_id  1:lnprob  "
+                          "  ".join(var_header)
+                          "  "
+                          "  ".join(blobs_header)
+                          "\n")
 
 
 ### Do the actual MCMC
@@ -290,7 +261,7 @@ if (__name__ == "__main__") & (not ini["debug_mode"]):
         lnlike,
         pool=pool,
         blobs_dtype=blobs_dtype,
-        **sampler_args,
+        **{k:v for k, v in ini['sampler_kwargs']},
     )
     ct = 0
     for result in sampler.sample(p_start, iterations=n_steps, thin_by=thin_by, progress=False):
@@ -309,45 +280,33 @@ if (__name__ == "__main__") & (not ini["debug_mode"]):
             if n_finite < 2:
                 raise ValueError(
                     "Your chain cannot progress: "
-                    "less than 2 of your walkers are starting at a finite value of "
-                    "the posterior. Please check if your starting positions are "
-                    "correct, and/or use debug mode to check your likelihoods."
+                    "less than 2 of your walkers are starting at a finite "
+                    "value of the posterior. Please check if your starting "
+                    "positions are correct, and/or use debug mode to check "
+                    "your likelihoods."
                 )
             elif n_finite < (0.5 * n_walkers):
                 print(
                     "Warning, your chain will take time to converge: "
                     f"only {n_finite * 100. / n_walkers}% of your walkers are "
-                    "starting at a finite value of the posterior. Please check if "
-                    "your starting positions are correct, and/or use debug mode to "
-                    "check your likelihoods."
+                    "starting at a finite value of the posterior. Please check "
+                    "if your starting positions are correct, and/or use debug "
+                    "mode to check your likelihoods."
                 )
-        # Always save the last MCMC step as plain text input file for future chain
-        np.savetxt(
-            f"{ini['output_root']}.input",
-            np.hstack((
-                result_coords,
-                result_log_prob[:, None],
-                result_blobs.view(dtype=np.float64).reshape(n_walkers, -1),
-            )),
-            header=names + "  log_prob  " + blobs_names,
-        )
-        # If not using the HDF5 format, save current state in plain text
-        if ini["output_format"] == "text":
-            with open(f"{ini['output_root']}.txt", "a") as output_file:
-                np.savetxt(
-                    output_file,
-                    np.hstack((
-                        np.arange(n_walkers)[:, None],
-                        result_log_prob[:, None],
-                        result_coords,
-                        result_blobs.view(dtype=np.float64).reshape(n_walkers, -1),
-                    ))
-                )
+        # Save current state in output file
+        with open(f"{ini['output_root']}.txt", "a") as output_file:
+            np.savetxt(
+                output_file,
+                np.hstack((
+                    np.arange(n_walkers)[:, None],
+                    result_log_prob[:, None],
+                    result_coords,
+                    result_blobs.view(dtype=np.float64).reshape(n_walkers, -1),
+                ))
+            )
         # Print MCMC progress
         ct += 1
         print(f"Current step : {ct} of {n_steps}")
-    if ini["output_format"] == "HDF5":
-        os.remove(f"{ini['output_root']}.lock") # remove lock file
     if ini["parallel"][0] == "MPI":
         pool.close()
         sys.exit()

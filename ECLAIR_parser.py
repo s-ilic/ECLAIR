@@ -136,9 +136,16 @@ def parse_ini_file(fname, silent_mode=False):
                 error_ct += 1
             else:
                 out['input_fname'] = slines[ix][1]
-                out['ch_start'] = int(slines[ix][2]) if l == 3 else -1
-                str_warn += (f"Will use step {out['ch_start']} from previous "
-                             f"chain {out['input_fname']} as starting point.\n")
+                if not isfile(out['input_fname']):
+                    str_err += ('File chosen as "input_fname" (namely '
+                                f'{out['input_fname']}) does not exist.\n')
+                    out['input_fname'] = None
+                    error_ct += 1
+                else:
+                    out['ch_start'] = int(slines[ix][2]) if l == 3 else -1
+                    str_warn += (f"Will use step {out['ch_start']} from "
+                                 f"previous chain {out['input_fname']} as "
+                                 "starting point.\n")
 
     ### Deal with continue_chain
     ct = options.count('continue_chain')
@@ -359,14 +366,13 @@ def parse_ini_file(fname, silent_mode=False):
                 str_err += f'> {sline}\n'
                 error_ct += 1
             else:
-                test1 = is_number(sline[1])
-                test2 = is_number(sline[2])
-                if test1 or test2:
+                if is_number(sline[1]):
                     str_err += 'Wrong argument type for "sampler_kwarg":\n'
                     str_err += f'> {fline}\n'
                     error_ct += 1
                 else:
-                    out['sampler_kwarg'].append(sline[1:])
+                    tmp = float(sline[2]) if is_number(sline[2]) else sline[2]
+                    out['sampler_kwargs'].append([sline[1], tmp])
         # Deal with constraints
         elif sline[0] == 'constraint':
             if len(sline) < 4:
