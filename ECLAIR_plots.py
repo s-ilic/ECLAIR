@@ -321,6 +321,8 @@ if args.output_getdist:
 ### Produce plots ###
 #####################
 
+figs = []
+
 if 1 in plot:
     fig1, ax1 = plt.subplots(1, 1)
     ax1.plot(-1. * ln, alpha=0.1)
@@ -340,6 +342,7 @@ if 1 in plot:
         )
     ax1.set_xlabel("MCMC step")
     ax1.set_ylabel("-log(likelihood)")
+    figs.append(fig1)
 
 if 2 in plot:
     nr, nc = 1, 1
@@ -396,6 +399,7 @@ if 2 in plot:
         wspace = 0.34,
         hspace = 0.04,
     )
+    figs.append(fig2)
 
 if 3 in plot:
     nr, nc = 1, 1
@@ -448,6 +452,7 @@ if 3 in plot:
         wspace = 0.34,
         hspace = 0.04,
     )
+    figs.append(fig3)
 
 if 4 in plot:
     fig4, ax4 = plt.subplots(1, 1)
@@ -466,6 +471,7 @@ if 4 in plot:
         )
     ax4.set_xlabel("MCMC step")
     ax4.set_ylabel("Mean acceptance rate")
+    figs.append(fig4)
 
 if 5 in plot:
     fig5, ax5 = plt.subplots(1, 1)
@@ -476,6 +482,7 @@ if 5 in plot:
     ax5.plot(x, np.poly1d(np.polyfit(x,y,3))(x), color='black', lw=2)
     ax5.set_xlabel("MCMC step")
     ax5.set_ylabel("Mean acceptance rate")
+    figs.append(fig5)
 
 if len(plot) > 0:
     plt.show()
