@@ -10,15 +10,9 @@ ini_fname = sys.argv[1]
 ini = ECLAIR_parser.parse_ini_file(ini_fname)
 
 
-### If a new chain is started, create copy of the ini file in output folder
-if not ini["continue_chain"] and not ini["debug_mode"]:
+### Create copy of the ini file in output folder
+if not ini["debug_mode"]:
     ECLAIR_parser.copy_ini_file(ini_fname, ini)
-
-
-### Print output path root
-print("#"*(25 + len(ini["output_root"])))
-print(f"### Starting MCMC in {ini['output_root']} ###")
-print("#"*(25 + len(ini["output_root"])))
 
 
 ### Import requested variant of class python wrapper
@@ -254,6 +248,7 @@ if not ini["continue_chain"] and not ini["debug_mode"]:
 
 
 ### Do the actual MCMC
+print(f"### Starting MCMC in {ini['output_root']} ###")
 if (__name__ == "__main__") & (not ini["debug_mode"]):
     sampler = MCMCsampler.EnsembleSampler(
         n_walkers,
