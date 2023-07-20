@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from os.path import isfile
 
@@ -589,6 +590,12 @@ def copy_ini_file(fname, params):
     ### Write copy of ini file
     with open(fname) as f:
         lines = f.readlines()
+    if isfile(params['output_root'] + '.ini'):
+        ix = 0
+        while isfile(params['output_root'] + '.ini.' + str(ix)):
+            ix += 1
+        os.system(f"mv {params['output_root']}.ini "
+                  f"{params['output_root']}.ini.{ix}")
     with open(params['output_root'] + '.ini', 'w') as f:
         for line in lines:
             sline = splt(line.replace('\n',''))
