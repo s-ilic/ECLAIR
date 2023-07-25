@@ -115,13 +115,15 @@ def lnlike(p):
             lnls[i] = float(like(class_input, lkl_input, class_run))
         except Exception as e:
             if ini["debug_mode"]:
+                print(f"The likelihood '{ini['likelihoods'][i]}' "
+                      "raised the following error:")
                 print(e)
             class_run.struct_cleanup()
             class_run.empty()
             return bad_res
         if not np.isfinite(lnls[i]):
             if ini["debug_mode"]:
-                print(f"Likelihood '{ini['likelihoods'][i]}' is not finite.")
+                print(f"The likelihood '{ini['likelihoods'][i]}' is not finite.")
             class_run.struct_cleanup()
             class_run.empty()
             return bad_res
