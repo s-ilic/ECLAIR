@@ -249,6 +249,11 @@ if not ini["continue_chain"] and not ini["debug_mode"]:
                           + "\n")
 
 
+### If debug mode, compute a single value of the likelihood to show issues
+if ini["debug_mode"]:
+    test = lnlike(p_start[0])
+
+
 ### Do the actual MCMC
 print(f"### Starting MCMC in {ini['output_root']} ###")
 if (__name__ == "__main__") & (not ini["debug_mode"]):
