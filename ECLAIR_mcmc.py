@@ -10,11 +10,6 @@ ini_fname = sys.argv[1]
 ini = ECLAIR_parser.parse_ini_file(ini_fname)
 
 
-### Create copy of the ini file in output folder
-if not ini["debug_mode"]:
-    ECLAIR_parser.copy_ini_file(ini_fname, ini)
-
-
 ### Import requested variant of class python wrapper
 which_class = ini["which_class"]
 exec(f"import {which_class} as classy")
@@ -249,9 +244,18 @@ if not ini["continue_chain"] and not ini["debug_mode"]:
                           + "\n")
 
 
-### If debug mode, compute a single value of the likelihood to show issues
+### In debug mode, compute a single likelihood to print potential error messages
 if ini["debug_mode"]:
-    test = lnlike(p_start[0])
+    test_lnl = lnlike(p_start[0])
+
+
+### Create copy of the ini file in output folder
+if not ini["debug_mode"]:
+    if ini["parallel"][0] == "MPI":
+        if pool.is_master():
+            ECLAIR_parser.copy_ini_file(ini_fname, ini)
+    else:
+        ECLAIR_parser.copy_ini_file(ini_fname, ini)
 
 
 ### Do the actual MCMC
