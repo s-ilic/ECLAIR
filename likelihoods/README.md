@@ -3,15 +3,15 @@
 
 ## Table of contents
 
-- [1) Background measurements](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#background-measurements)
-  - [1-a) BAO data](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#bao-data)
-  - [1-b) H0 data](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#h0-data)
-  - [1-c) SN data](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#sn-data)
-- [2) Cosmic microwave background measurements](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#cosmic-microwave-background-measurements)
-  - [2-a) Planck](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#planck)
-  - [2-b) ACT](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#ACT)
-  - [2-c) BICEP/Keck](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#bicepkeck)
-  - [2-d) SPT](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#spt)
+- [1) Background measurements](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#1-background-measurements)
+  - [1-a) BAO data](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#1-a-bao-data)
+  - [1-b) H0 data](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#1-b-h0-data)
+  - [1-c) SN data](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#1-c-sn-data)
+- [2) Cosmic microwave background measurements](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#2-cosmic-microwave-background-measurements)
+  - [2-a) Planck](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#2-a-planck)
+  - [2-b) ACT](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#2-b-act)
+  - [2-c) BICEP/Keck](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#2-c-bicepkeck)
+  - [2-d) SPT](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#2-d-spt)
 
 -------------
 
