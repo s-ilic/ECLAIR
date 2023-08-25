@@ -16,12 +16,12 @@ from . import tools
 ### First initialisations ###
 #############################
 
-planck_2020_root = os.environ.get('PLANCK_2020_DATA')
-if planck_2020_root == None:
-    raise ValueError('The environment variable PLANCK_2020_DATA is not set.')
+planck_pr4_root = os.environ.get('PLANCK_PR4_DATA')
+if planck_pr4_root == None:
+    raise ValueError('The environment variable PLANCK_PR4_DATA is not set.')
 
 likelihood_name = "EE"
-data_folder = planck_2020_root + "/hillipop"
+data_folder = planck_pr4_root + "/hillipop"
 multipoles_range_file = "data/binning_v4.2.fits"
 xspectra_basename = "data/dl_PR4_v4.2"
 covariance_matrix_file = "data/invfll_PR4_v4.2_EE.fits"

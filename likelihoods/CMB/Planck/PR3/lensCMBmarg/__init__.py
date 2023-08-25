@@ -3,9 +3,9 @@ import clik
 import numpy as np
 
 ### Some important variables ###
-clik_root = os.environ.get('PLANCK_2018_DATA')
+clik_root = os.environ.get('PLANCK_PR3_DATA')
 if clik_root == None:
-    raise ValueError('The environment variable PLANCK_2018_DATA is not set.')
+    raise ValueError('The environment variable PLANCK_PR3_DATA is not set.')
 
 ### Planck 2018 lensing CMB-marginalized
 lens_CMBmarg = clik.clik_lensing(clik_root + '/lensing/smicadx12_Dec5_ftl_mv2_ndclpp_p_teb_consext8_CMBmarged.clik_lensing')

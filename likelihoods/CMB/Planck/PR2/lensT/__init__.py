@@ -3,9 +3,9 @@ import clik
 import numpy as np
 
 ### Some important variables ###
-clik_root = os.environ.get('PLANCK_2015_DATA')
+clik_root = os.environ.get('PLANCK_PR2_DATA')
 if clik_root == None:
-    raise ValueError('The environment variable PLANCK_2015_DATA is not set.')
+    raise ValueError('The environment variable PLANCK_PR2_DATA is not set.')
 
 ### Planck 2015 lensing T only
 lensT = clik.clik_lensing(clik_root + '/lensing/smica_g30_ftl_full_pttptt.clik_lensing')

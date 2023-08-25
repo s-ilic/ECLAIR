@@ -3,9 +3,9 @@ import clik
 import numpy as np
 
 ### Some important variables ###
-clik_root = os.environ.get('PLANCK_2015_DATA')
+clik_root = os.environ.get('PLANCK_PR2_DATA')
 if clik_root == None:
-    raise ValueError('The environment variable PLANCK_2015_DATA is not set.')
+    raise ValueError('The environment variable PLANCK_PR2_DATA is not set.')
 
 ### Planck 2015 low ells TT
 lell_TT = clik.clik(clik_root + '/low_l/commander/commander_rc2_v1.1_l2_29_B.clik')

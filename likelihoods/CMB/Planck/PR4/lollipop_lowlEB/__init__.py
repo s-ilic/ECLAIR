@@ -11,9 +11,9 @@ from .bins import Bins
 ### Initialisations ###
 #######################
 
-planck_2020_root = os.environ.get('PLANCK_2020_DATA')
-if planck_2020_root == None:
-    raise ValueError('The environment variable PLANCK_2020_DATA is not set.')
+planck_pr4_root = os.environ.get('PLANCK_PR4_DATA')
+if planck_pr4_root == None:
+    raise ValueError('The environment variable PLANCK_PR4_DATA is not set.')
 
 mode = "lowlEB"
 cl_file = 'cl_lolEB_NPIPE.dat'
@@ -27,13 +27,13 @@ lmax = 30
 
 bins = tools.get_binning(lmin, lmax)
 
-data = tools.read_dl(planck_2020_root + '/lollipop/' + cl_file)
+data = tools.read_dl(planck_pr4_root + '/lollipop/' + cl_file)
 cldata = bins.bin_spectra(data)
 
-data = tools.read_dl(planck_2020_root + '/lollipop/' + fiducial_file)
+data = tools.read_dl(planck_pr4_root + '/lollipop/' + fiducial_file)
 clfid = bins.bin_spectra(data)
 
-clcov = fits.getdata(planck_2020_root + '/lollipop/' + cl_cov_file)
+clcov = fits.getdata(planck_pr4_root + '/lollipop/' + cl_cov_file)
 if mode == "lowlEB":
     cbcov = tools.bin_covEB(clcov, bins)
 elif mode == "lowlE":
