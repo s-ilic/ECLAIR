@@ -22,8 +22,10 @@ cl_cov_file = 'clcov_lolEB_NPIPE.fits'
 hartlap_factor = False
 marginalised_over_covariance = True
 Nsim = 400
+lmin = 2
+lmax = 30
 
-bins = tools.get_binning()
+bins = tools.get_binning(lmin, lmax)
 
 data = tools.read_dl(planck_2020_root + '/lollipop/' + cl_file)
 cldata = bins.bin_spectra(data)
@@ -64,7 +66,7 @@ cloff[2:] = 0.0  # force NO offsets EB
 ### Auxilary functions ###
 ##########################
 
-def _compute_chi2_2fields(cl):
+def _compute_chi2_2fields(cl, params_values):
     """
     Compute offset-Hamimeche&Lewis likelihood
     Input: Cl in muK^2
@@ -74,11 +76,13 @@ def _compute_chi2_2fields(cl):
         [bins.bin_spectra(cl[mode]) for mode in ["ee", "bb", "eb"] if mode in cl]
     )
 
+    cal = params_values["A_planck"]**2
+
     nell = cldata.shape[1]
     x = np.zeros(cldata.shape)
     for ell in range(nell):
         O = tools.vec2mat(cloff[:, ell])
-        D = tools.vec2mat(cldata[:, ell]) + O
+        D = tools.vec2mat(cldata[:, ell] * cal) + O
         M = tools.vec2mat(clth[:, ell]) + O
         F = tools.vec2mat(clfid[:, ell]) + O
 
@@ -111,7 +115,7 @@ def _compute_chi2_2fields(cl):
 
     return chi2
 
-def _compute_chi2_1field(cl):
+def _compute_chi2_1field(cl, params_values):
     """
     Compute offset-Hamimeche&Lewis likelihood
     Input: Cl in muK^2
@@ -120,7 +124,9 @@ def _compute_chi2_1field(cl):
     m = 0 if mode == "lowlE" else 1
     clth = bins.bin_spectra(cl["ee" if mode == "lowlE" else "bb"])
 
-    x = (cldata[m] + cloff[m]) / (clth + cloff[m])
+    cal = params_values["A_planck"]**2
+
+    x = (cldata[m] * cal + cloff[m]) / (clth + cloff[m])
     g = np.sign(x) * tools.ghl(np.abs(x))
 
     X = (np.sqrt(clfid[m] + cloff[m])) * g * (np.sqrt(clfid[m] + cloff[m]))
@@ -144,7 +150,7 @@ def get_loglike(class_input, likes_input, class_run):
     if 'eb' not in cl.keys():
         cl['eb'] = cl['ee'].copy() * 0.
     if mode == "lowlEB":
-        chi2 = _compute_chi2_2fields(cl)
+        chi2 = _compute_chi2_2fields(cl, likes_input)
     elif mode in ["lowlE", "lowlB"]:
         chi2 = _compute_chi2_1field(cl)
     return -0.5 * chi2
