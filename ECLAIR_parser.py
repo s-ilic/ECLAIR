@@ -173,10 +173,13 @@ def parse_ini_file(fname, silent_mode=False):
                     error_ct += 1
                 else:
                     out['continue_chain'] = True
-            else:
-                if isfile(outname):
-                    str_err += f'The output chain ({outname}) already exists.\n'
-                    error_ct += 1
+    if not out['continue_chain'] and out['output_root'] is not None:
+        outname = out['output_root'] + '.txt'
+        if isfile(outname):
+            str_err += (f'The output chain ({outname}) already exists. Set '
+                        '"continue_chain" to yes if you want to append new '
+                        'samples to it.')
+            error_ct += 1
 
     ### Deal with choice of MCMC sampler
     ct = options.count('which_sampler')
