@@ -152,5 +152,5 @@ def get_loglike(class_input, likes_input, class_run):
     if mode == "lowlEB":
         chi2 = _compute_chi2_2fields(cl, likes_input)
     elif mode in ["lowlE", "lowlB"]:
-        chi2 = _compute_chi2_1field(cl)
+        chi2 = _compute_chi2_1field(cl, likes_input)
     return -0.5 * chi2
