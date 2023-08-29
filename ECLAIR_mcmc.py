@@ -247,6 +247,10 @@ if not ini["continue_chain"] and not ini["debug_mode"]:
 ### In debug mode, compute a single likelihood to print potential error messages
 if ini["debug_mode"]:
     test_lnl = lnlike(p_start[0])
+    print(f"lnpost={test_lnl[0]}")
+    print(f"lnprior={test_lnl[1]}")
+    for i, n in enumerate(ini["likelihoods"]):
+        print(f"lnlike({n})={test_lnl[2+i]}")
 
 
 ### Create copy of the ini file in output folder
