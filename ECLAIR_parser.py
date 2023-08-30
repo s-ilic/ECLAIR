@@ -344,6 +344,7 @@ def parse_ini_file(fname, silent_mode=False):
         error_ct += 1
 
     ### Loop to catch parameters that can have multiple instances
+    out['keep_input'] = []
     out['sampler_kwargs'] = []
     out['constraints'] = []
     out['likelihoods'] = []
@@ -364,8 +365,20 @@ def parse_ini_file(fname, silent_mode=False):
     cst_names = [] # constrained parameter names
     drv_names = [] # derived parameter names
     for sline, fline in zip(slines, flines):
+        ### Deal with keep_input
+        if sline[0] == 'keep_input':
+            if len(sline) != 4:
+                str_err += 'Wrong number of arguments for "keep_input":\n'
+                str_err += f'> {sline}\n'
+                error_ct += 1
+            elif (sline[2] not in ['>','<']) or (not is_number(sline[3])):
+                str_err += 'Wrong syntax in "keep_input":\n'
+                str_err += f'> {fline}\n'
+                error_ct += 1
+            else:
+                out['keep_input'].append(sline[1:])
         # Deal with options of MCMC sampler
-        if sline[0] == 'sampler_kwarg':
+        elif sline[0] == 'sampler_kwarg':
             if len(sline) != 3:
                 str_err += 'Wrong number of arguments for "sampler_kwarg":\n'
                 str_err += f'> {sline}\n'

@@ -201,11 +201,31 @@ if ini["input_fname"] is not None:
     in_ini = ECLAIR_parser.parse_ini_file(
         f"{ini['input_fname'][:-4]}.ini",
         silent_mode=True)
-    in_names = [par[1] for par in in_ini["var_par"]]
+    in_names = ['lnprob']
+    in_names += [par[1] for par in in_ini["var_par"]]
+    in_names += ["lnprior"]
+    in_names += [f"lnlike_{name}" for name in in_ini["likelihoods"]]
+    in_names += [deriv[0] for deriv in in_ini["derivs"]]
     in_nw = in_ini["n_walkers"]
     # Get requested sample from chain
-    input_p = np.loadtxt(ini['input_fname'])[:, 2:len(in_names)+2]
-    input_p = input_p.reshape(-1, in_nw, len(in_names))[ini["ch_start"], :, :]
+    input_p = np.loadtxt(ini['input_fname'])
+    step_ix = (ini["ch_start"] if ini["ch_start"] >= 0
+               else input_p.shape[0] // in_nw + ini["ch_start"])
+    input_p = input_p[:(step_ix+1)*in_nw, 1:][::-1, :]
+    # Grab all the unique samples (using the first MCMC parameter values)
+    input_p = input_p[np.sort(np.unique(input_p[:,0], return_index=True)[1]), :]
+    # Trim that sample if requested
+    for k in ini['keep_input']:
+        if k[0] in in_names:
+            par_ix = in_names.index(k[0])
+            if k[1] == ">":
+                g = input_p[:, par_ix] > float(k[2])
+            else:
+                g = input_p[:, par_ix] < float(k[2])
+            input_p = input_p[g, :]
+            if input_p.shape[0] < n_walkers:
+                ValueError("Not enough sample in your input chain fulfil "
+                           "your 'keep_input' requirements!")
     # Find which current chain parameters are in provided input file
     ix_in_names = []
     for name in var_names:
@@ -220,15 +240,13 @@ if ini["input_fname"] is not None:
         for i, ix in enumerate(ix_in_names):
             # In p_start, replace only the parameters present in input file
             if ix != -1:
-                p_start[nw, i] = input_p[nw % in_nw, ix]
+                p_start[nw, i] = input_p[nw, ix]
 
 
 ### Prepare some inputs for the MCMC
 blobs_dtype = [("lnprior", float)]
 blobs_dtype += [(f"lnlike_{name}", float) for name in ini["likelihoods"]]
 blobs_dtype += [(deriv[0], float) for deriv in ini["derivs"]]
-names = "  ".join(var_names)
-blobs_names = "  ".join([b[0] for b in blobs_dtype])
 
 
 ### Initialize output file
