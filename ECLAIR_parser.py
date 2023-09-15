@@ -42,14 +42,13 @@ def splt(s, sep=None, maxsplit=-1):
 def parse_ini_file(fname, silent_mode=False):
 
     ### Strings containing all warnings and errors, to be printed at the end
-    str_err  = '################\n#### ERRORS ####\n################\n'
-    str_warn = '\n################\n### WARNINGS ###\n################\n'
+    str_warn = ''
+    str_err = ''  # should ideally stay empty
 
     ### Open the .ini file
     with open(fname) as f:
         lines = f.readlines()
     out =  {}
-    error_ct = 0 # Error count, should stay 0
 
     ### Read all lines and options (i.e. 1st word on each line)
     slines = [] # split lines
@@ -59,7 +58,6 @@ def parse_ini_file(fname, silent_mode=False):
         sline = splt(line.replace('\n',''))
         if sline == None:
             str_err += f'Error: odd number of double quotes\n> {line}\n'
-            error_ct += 1
         empty_line = sline == []
         if not empty_line and sline is not None:
             is_comment = not line.strip()[0].isalpha()
@@ -75,15 +73,12 @@ def parse_ini_file(fname, silent_mode=False):
         str_warn += '"debug_mode" not found. Assumed "no".\n'
     elif ct > 1:
         str_err += f'Multiple ({ct}) instances of "debug_mode" found.\n'
-        error_ct += 1
     else:
         ix = options.index('debug_mode')
         if len(slines[ix]) != 2:
             str_err += 'Wrong number of arguments for "debug_mode".\n'
-            error_ct += 1
         elif slines[ix][1] not in ['yes', 'no']:
             str_err += '"debug_mode" should be "yes" or "no".\n'
-            error_ct += 1
         elif slines[ix][1] == 'yes':
             out['debug_mode'] = True
 
@@ -92,21 +87,17 @@ def parse_ini_file(fname, silent_mode=False):
     if ct == 0:
         str_err += '"output_root" not found.\n'
         out['output_root'] = None
-        error_ct += 1
     elif ct > 1:
         str_err += f'Multiple ({ct}) instances of "output_root" found.\n'
         out['output_root'] = None
-        error_ct += 1
     else:
         ix = options.index('output_root')
         if len(slines[ix]) != 2:
             str_err += 'Wrong number of arguments for "output_root".\n'
             out['output_root'] = None
-            error_ct += 1
         elif is_number(slines[ix][1]):
             str_err += 'Wrong argument type for "output_root".\n'
             out['output_root'] = None
-            error_ct += 1
         else:
             out['output_root'] = slines[ix][1]
 
@@ -118,14 +109,12 @@ def parse_ini_file(fname, silent_mode=False):
     elif ct > 1:
         str_err += f'Multiple ({ct}) instances of "input_fname" found.\n'
         out['input_fname'] = None
-        error_ct += 1
     else:
         ix = options.index('input_fname')
         l = len(slines[ix])
         if (l != 2) & (l != 3):
             str_err += 'Wrong number of arguments for "input_fname".\n'
             out['input_fname'] = None
-            error_ct += 1
         else:
             test1 = is_number(slines[ix][1])
             test2 = False
@@ -134,14 +123,12 @@ def parse_ini_file(fname, silent_mode=False):
             if test1 or test2:
                 str_err += 'Wrong argument(s) type(s) for "input_fname".\n'
                 out['input_fname'] = None
-                error_ct += 1
             else:
                 out['input_fname'] = slines[ix][1]
                 if not isfile(out['input_fname']):
                     str_err += ('File chosen as "input_fname" (namely '
                                 f'{out["input_fname"]}) does not exist.\n')
                     out['input_fname'] = None
-                    error_ct += 1
                 else:
                     out['ch_start'] = int(slines[ix][2]) if l == 3 else -1
                     str_warn += (f"Will use step {out['ch_start']} from "
@@ -155,22 +142,18 @@ def parse_ini_file(fname, silent_mode=False):
         str_warn += '"continue_chain" not found. Assumed "no".\n'
     elif ct > 1:
         str_err += f'Multiple ({ct}) instances of "continue_chain" found.\n'
-        error_ct += 1
     else:
         ix = options.index('continue_chain')
         if len(slines[ix]) != 2:
             str_err += 'Wrong number of arguments for "continue_chain".\n'
-            error_ct += 1
         elif slines[ix][1] not in ['yes', 'no']:
             str_err += 'Argument for "continue_chain" should be yes or no.\n'
-            error_ct += 1
         else:
             outname = out['output_root'] + '.txt'
             if slines[ix][1] == 'yes':
                 if not isfile(outname):
                     str_err += ("The chain you want to continue from "
                                 f"({outname}) does not exist.\n")
-                    error_ct += 1
                 else:
                     out['continue_chain'] = True
     if not out['continue_chain'] and out['output_root'] is not None:
@@ -179,7 +162,6 @@ def parse_ini_file(fname, silent_mode=False):
             str_err += (f'The output chain ({outname}) already exists. Set '
                         '"continue_chain" to yes if you want to append new '
                         'samples to it.')
-            error_ct += 1
 
     ### Deal with choice of MCMC sampler
     ct = options.count('which_sampler')
@@ -188,15 +170,12 @@ def parse_ini_file(fname, silent_mode=False):
         out['which_sampler'] = 'emcee'
     elif ct > 2:
         str_err += f'Multiple ({ct}) instances of "which_sampler" found.\n'
-        error_ct += 1
     else:
         ix = options.index('which_sampler')
         if len(slines[ix]) != 2:
             str_err += 'Wrong number of arguments for "which_sampler".\n'
-            error_ct += 1
         elif slines[ix][1] not in ['emcee', 'zeus']:
             str_err += 'Unrecognized sampler: should be either emcee or zeus.\n'
-            error_ct += 1
         else:
             out['which_sampler'] = slines[ix][1]
 
@@ -208,25 +187,20 @@ def parse_ini_file(fname, silent_mode=False):
         ct = options.count('parallel')
         if ct > 1:
             str_err += f'Multiple ({ct}) instances of "parallel" found.\n'
-            error_ct += 1
         else:
             ix = options.index('parallel')
             if slines[ix][1] not in ['none', 'multiprocessing', 'MPI']:
                 str_err += 'Unrecognized argument for "parallel".\n'
-                error_ct += 1
             elif slines[ix][1] == 'multiprocessing':
                 if len(slines[ix]) != 3:
                     str_err += 'Wrong number of arguments for "parallel".\n'
-                    error_ct += 1
                 elif not is_number(slines[ix][2]):
                     str_err += 'Wrong argument type in "parallel".\n'
-                    error_ct += 1
                 else:
                     out['parallel'] = slines[ix][1:]
             else:
                 if len(slines[ix]) != 2:
                     str_err += 'Wrong number of arguments for "parallel".\n'
-                    error_ct += 1
                 else:
                     out['parallel'] = [slines[ix][1]]
 
@@ -239,18 +213,14 @@ def parse_ini_file(fname, silent_mode=False):
         out['n_walkers'] = 2
     elif ct > 1:
         str_err += f'Multiple ({ct}) instances of "n_walkers" found.\n'
-        error_ct += 1
     else:
         ix = options.index('n_walkers')
         if len(slines[ix]) != 3:
             str_err += 'Wrong number of arguments for "n_walkers".\n'
-            error_ct += 1
         elif slines[ix][1] not in ['custom', 'prop_to']:
             str_err += 'Unrecognizd argument for "n_walkers".\n'
-            error_ct += 1
         elif not is_number(slines[ix][2]):
             str_err += 'Wrong argument type for "n_walkers".\n'
-            error_ct += 1
         else:
             out['n_walkers_type'] = slines[ix][1]
             out['n_walkers'] = int(slines[ix][2])
@@ -259,18 +229,14 @@ def parse_ini_file(fname, silent_mode=False):
     ct = options.count('n_steps')
     if ct == 0:
         str_err += '"n_steps" not found.\n'
-        error_ct += 1
     elif ct > 2:
         str_err += f'Multiple ({ct}) instances of "n_steps" found.\n'
-        error_ct += 1
     else:
         ix = options.index('n_steps')
         if len(slines[ix]) != 2:
             str_err += 'Wrong number of arguments for "n_steps".\n'
-            error_ct += 1
         elif not is_number(slines[ix][1]):
             str_err += 'Wrong argument type for "n_steps".\n'
-            error_ct += 1
         else:
             out['n_steps'] = int(slines[ix][1])
 
@@ -281,15 +247,12 @@ def parse_ini_file(fname, silent_mode=False):
         out['thin_by'] = 1
     elif ct > 2:
         str_err += f'Multiple ({ct}) instances of "thin_by" found.\n'
-        error_ct += 1
     else:
         ix = options.index('thin_by')
         if len(slines[ix]) != 2:
             str_err += 'Wrong number of arguments for "thin_by".\n'
-            error_ct += 1
         elif not is_number(slines[ix][1]):
             str_err += 'Wrong argument type for "thin_by".\n'
-            error_ct += 1
         else:
             out['thin_by'] = int(slines[ix][1])
 
@@ -300,15 +263,12 @@ def parse_ini_file(fname, silent_mode=False):
         out['temperature'] = 1
     elif ct > 2:
         str_err += f'Multiple ({ct}) instances of "temperature" found.\n'
-        error_ct += 1
     else:
         ix = options.index('temperature')
         if len(slines[ix]) != 2:
             str_err += 'Wrong number of arguments for "temperature".\n'
-            error_ct += 1
         elif not is_number(slines[ix][1]):
             str_err += 'Wrong argument type for "temperature".\n'
-            error_ct += 1
         else:
             out['temperature'] = float(slines[ix][1])
 
@@ -319,15 +279,12 @@ def parse_ini_file(fname, silent_mode=False):
         out['which_class'] = 'classy'
     elif ct > 2:
         str_err += f'Multiple ({ct}) instances of "which_class" found.\n'
-        error_ct += 1
     else:
         ix = options.index('which_class')
         if len(slines[ix]) != 2:
             str_err += 'Wrong number of arguments for "which_class".\n'
-            error_ct += 1
         elif is_number(slines[ix][1]):
             str_err += 'Wrong argument type for "which_class".\n'
-            error_ct += 1
         else:
             out['which_class'] = slines[ix][1]
 
@@ -335,13 +292,11 @@ def parse_ini_file(fname, silent_mode=False):
     ct = options.count('likelihood')
     if ct == 0:
         str_err += 'No likelihood specified.\n'
-        error_ct += 1
 
     ### Check if any free variables
     ct = options.count('var') + options.count('var_class')
     if ct == 0:
         str_err += 'No free parameters specified.\n'
-        error_ct += 1
 
     ### Loop to catch parameters that can have multiple instances
     out['keep_input'] = []
@@ -370,26 +325,22 @@ def parse_ini_file(fname, silent_mode=False):
             if len(sline) < 2:
                 str_err += 'Wrong number of arguments for "keep_input":\n'
                 str_err += f'> {sline}\n'
-                error_ct += 1
                 continue
             ct_gt = fline.count(">")
             ct_lt = fline.count("<")
             if (ct_gt + ct_lt) != 1:
                 str_err += 'Wrong syntax in "keep_input":\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
                 continue
             sign = ">" if ct_gt == 1 else "<"
             tmp = fline.strip().lstrip('keep_input').split(sign)
             if len(tmp) != 2:
                 str_err += 'Wrong syntax in "keep_input":\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
                 continue
             if not is_number(tmp[1]):
                 str_err += 'Wrong syntax in "keep_input":\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
                 continue
             out['keep_input'].append([tmp[0].strip(), sign, tmp[1].strip()])
         # Deal with options of MCMC sampler
@@ -397,12 +348,10 @@ def parse_ini_file(fname, silent_mode=False):
             if len(sline) != 3:
                 str_err += 'Wrong number of arguments for "sampler_kwarg":\n'
                 str_err += f'> {sline}\n'
-                error_ct += 1
             else:
                 if is_number(sline[1]):
                     str_err += 'Wrong argument type for "sampler_kwarg":\n'
                     str_err += f'> {fline}\n'
-                    error_ct += 1
                 else:
                     tmp = float(sline[2]) if is_number(sline[2]) else sline[2]
                     out['sampler_kwargs'].append([sline[1], tmp])
@@ -411,15 +360,12 @@ def parse_ini_file(fname, silent_mode=False):
             if fline.count("=") != 1:
                 str_err += 'More/less than 1 equal sign in "constraint":\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             elif len(fline.split("=")[0].split()) != 2:
                 str_err += 'Wrong syntax in "constraint":\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             elif fline.split("=")[1].strip() == '':
                 str_err += 'Wrong syntax in "constraint":\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             else:
                 tmp_cst = fline.replace('constraint','').strip()
                 out['constraints'].append(tmp_cst)
@@ -437,7 +383,6 @@ def parse_ini_file(fname, silent_mode=False):
             if len(sline) != 2:
                 str_err += 'Wrong number of arguments for "likelihood".\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             else:
                 out['likelihoods'].append(sline[1])
         # Deal with deriv
@@ -445,11 +390,9 @@ def parse_ini_file(fname, silent_mode=False):
             if len(sline) != 3:
                 str_err += 'Wrong number of arguments for "deriv":\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             elif is_number(sline[1]) | is_number(sline[2]):
                 str_err += 'Wrong argument type for "deriv":\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             else:
                 out['derivs'].append([sline[1], sline[2]])
                 drv_names.append(sline[1])
@@ -461,7 +404,6 @@ def parse_ini_file(fname, silent_mode=False):
             if not (good1 & good2 & good3):
                 str_err += 'Wrong "var/var_class" format:\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             else:
                 out['var_par'].append(sline[:2] + [float(x) for x in sline[2:]])
                 vp_names.append(sline[1])
@@ -478,7 +420,6 @@ def parse_ini_file(fname, silent_mode=False):
             if not (good1 & good2 & good3):
                 str_err += 'Wrong "gauss_prior" format:\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             else:
                 out['gauss_priors'].append(
                     [sline[1]] + [float(x) for x in sline[2:]])
@@ -490,7 +431,6 @@ def parse_ini_file(fname, silent_mode=False):
             if not (good1 & good2 & good3):
                 str_err += 'Wrong "uni_prior" format:\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             else:
                 out['drv_uni_priors'].append(
                     [sline[1]] + [float(x) for x in sline[2:]])
@@ -499,7 +439,6 @@ def parse_ini_file(fname, silent_mode=False):
             if (len(sline) != 3) or is_number(sline[1]):
                 str_err += 'Wrong "fix_class" format:\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             elif is_number(sline[2]):
                 out['base_par_class'][sline[1]] = float(sline[2])
                 bpc_names.append(sline[1])
@@ -516,11 +455,9 @@ def parse_ini_file(fname, silent_mode=False):
             if len(sline) != 3:
                 str_err += 'Wrong "fix" format:\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             elif is_number(sline[1]) | (not is_number(sline[2])):
                 str_err += 'Wrong "fix" format:\n'
                 str_err += f'> {fline}\n'
-                error_ct += 1
             else:
                 out['base_par_lkl'][sline[1]] = float(sline[2])
                 bpl_names.append(sline[1])
@@ -550,18 +487,14 @@ def parse_ini_file(fname, silent_mode=False):
     for n in vp_names:
         if vp_names.count(n) > 1:
             str_err += f'Duplicate "var_class/var" parameter: {n}\n'
-            error_ct += 1
         if (n in bpc_names) or (n in bpl_names):
             str_err += f'Error: parameter "{n}" is both fixed and varying.\n'
-            error_ct += 1
     for n in bpc_names:
         if bpc_names.count(n) > 1:
             str_err += f'Duplicate "fix_class" parameter: {n}\n'
-            error_ct += 1
     for n in bpl_names:
         if bpl_names.count(n) > 1:
             str_err += f'Duplicate "fix" parameter: {n}\n'
-            error_ct += 1
 
     ### Checks for parameter arrays
     for n in out['array_var'].keys():
@@ -576,7 +509,6 @@ def parse_ini_file(fname, silent_mode=False):
             if not_good1 & not_good2:
                 str_err += (f'Error: element {i} of parameter array "{n}" '
                             'missing.\n')
-                error_ct += 1
         out['array_var'][n] = max(ixs) + 1
 
     ### Checks constraints
@@ -584,33 +516,40 @@ def parse_ini_file(fname, silent_mode=False):
         if cst_name in (vp_names + bpc_names + bpl_names):
             str_err += (f'Error: {cst_name} is both constrained and '
                         'variable/fixed.\n')
-            error_ct += 1
 
     ### Checks for uniform priors
     for i, p in enumerate(out['drv_uni_priors']):
         if p[0] not in (vp_names + drv_names):
             str_err += (f'Error: parameter {p[0]} has prior but is not an MCMC '
                         'or derived parameter.\n')
-            error_ct += 1
 
     ### Checks for Gaussian priors
     for i, p in enumerate(out['gauss_priors']):
         if p[0] not in (vp_names + drv_names):
             str_err += (f'Error: parameter {p[0]} has prior but is not an MCMC '
                         'or derived parameter.\n')
-            error_ct += 1
         if p[0] in drv_names:
             out['drv_gauss_priors'].append(out['gauss_priors'].pop(i))
 
     ### Raise error if any problem detected, else return final dictionary
-    if error_ct == 0:
+    has_errors = str_err != ''
+    if not has_errors:
         str_err += 'None.\n'
+    if str_warn == '':
+        str_warn += 'None.\n'
     if not silent_mode:
-        print(str_warn)
-        print(str_err)
+        print("\n"
+              "################\n"
+              "### WARNINGS ###\n"
+              "################\n"
+              + str_warn)
+        print("################\n"
+              "#### ERRORS ####\n"
+              "################\n"
+              + str_err)
     if silent_mode:
         return out
-    elif error_ct >= 1:
+    elif has_errors:
         raise ValueError('Check your .ini file for the above error(s).')
     else:
         return out
