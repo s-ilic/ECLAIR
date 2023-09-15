@@ -367,16 +367,31 @@ def parse_ini_file(fname, silent_mode=False):
     for sline, fline in zip(slines, flines):
         ### Deal with keep_input
         if sline[0] == 'keep_input':
-            if len(sline) != 4:
+            if len(sline) < 2:
                 str_err += 'Wrong number of arguments for "keep_input":\n'
                 str_err += f'> {sline}\n'
                 error_ct += 1
-            elif (sline[2] not in ['>','<']) or (not is_number(sline[3])):
+                continue
+            ct_gt = fline.count(">")
+            ct_lt = fline.count("<")
+            if (ct_gt + ct_lt) != 1:
                 str_err += 'Wrong syntax in "keep_input":\n'
                 str_err += f'> {fline}\n'
                 error_ct += 1
-            else:
-                out['keep_input'].append(sline[1:])
+                continue
+            sign = ">" if ct_gt == 1 else "<"
+            tmp = fline.strip().lstrip('keep_input').split(sign)
+            if len(tmp) != 2:
+                str_err += 'Wrong syntax in "keep_input":\n'
+                str_err += f'> {fline}\n'
+                error_ct += 1
+                continue
+            if not is_number(tmp[1]):
+                str_err += 'Wrong syntax in "keep_input":\n'
+                str_err += f'> {fline}\n'
+                error_ct += 1
+                continue
+            out['keep_input'].append([tmp[0].strip(), sign, tmp[1].strip()])
         # Deal with options of MCMC sampler
         elif sline[0] == 'sampler_kwarg':
             if len(sline) != 3:
