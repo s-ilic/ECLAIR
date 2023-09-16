@@ -224,7 +224,7 @@ if ini["input_fname"] is not None:
                 g = input_p[:, par_ix] < float(k[2])
             input_p = input_p[g, :]
     if input_p.shape[0] < n_walkers:
-        raise ValueError("Not enough samples in your input chain fulfil "
+        raise ValueError("Not enough unique samples in your input chain fulfil "
                          "your 'keep_input' requirements!")
     # Find which current chain parameters are in provided input file
     ix_in_names = []

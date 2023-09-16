@@ -1,4 +1,6 @@
 import os
+import datetime
+import subprocess
 import numpy as np
 from os.path import isfile
 
@@ -557,16 +559,10 @@ def parse_ini_file(fname, silent_mode=False):
 
 def copy_ini_file(fname, params):
 
-    ### Write copy of ini file
+    ### Write temporay copy of ini file
     with open(fname) as f:
         lines = f.readlines()
-    if isfile(params['output_root'] + '.ini'):
-        ix = 0
-        while isfile(params['output_root'] + '.ini.' + str(ix)):
-            ix += 1
-        os.system(f"mv {params['output_root']}.ini "
-                  f"{params['output_root']}.ini.{ix}")
-    with open(params['output_root'] + '.ini', 'w') as f:
+    with open(params['output_root'] + '.ini.tmp', 'w') as f:
         for line in lines:
             sline = splt(line.replace('\n',''))
             empty_line = sline == []
@@ -574,4 +570,30 @@ def copy_ini_file(fname, params):
                 is_comment = not line.strip()[0].isalpha()
                 if not is_comment:
                     f.write(line)
+
+    ### Write inside log file
+    with open(params['output_root'] + '.log', 'a') as f:
+        f.write(str(datetime.datetime.now())+"\n")
+        if not params["continue_chain"]:
+            f.write("Chain is started.\n\n")
+        else:
+            sh = np.loadtxt(params['output_root'] + '.txt').shape
+            f.write("Chain is restarted.\nIt currently has "
+                    f"{sh[0]//params['n_walkers']} samples.\n")
+            f.write("Changes in ini file:\n")
+            res = subprocess.run(
+                ["diff",
+                params['output_root'] + '.ini',
+                params['output_root'] + '.ini.tmp'],
+                stdout=subprocess.PIPE
+            ).stdout.decode('utf-8')
+            if res == "":
+                f.write("None.\n")
+            else:
+                f.write(res)
+            f.write("\n")
+
+    ### Copy to final file
+    os.system(f"mv {params['output_root']}.ini.tmp {params['output_root']}.ini")
+
     return None
