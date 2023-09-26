@@ -457,7 +457,7 @@ def parse_ini_file(fname, silent_mode=False):
             if len(sline) != 3:
                 str_err += 'Wrong "fix" format:\n'
                 str_err += f'> {fline}\n'
-            elif is_number(sline[1]) | (not is_number(sline[2])):
+            elif is_number(sline[1]):
                 str_err += 'Wrong "fix" format:\n'
                 str_err += f'> {fline}\n'
             else:
