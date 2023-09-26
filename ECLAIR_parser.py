@@ -461,7 +461,10 @@ def parse_ini_file(fname, silent_mode=False):
                 str_err += 'Wrong "fix" format:\n'
                 str_err += f'> {fline}\n'
             else:
-                out['base_par_lkl'][sline[1]] = float(sline[2])
+                if is_number(sline[2]):
+                    out['base_par_lkl'][sline[1]] = float(sline[2])
+                else:
+                    out['base_par_lkl'][sline[1]] = sline[2]
                 bpl_names.append(sline[1])
         # Warn about unknown options
         else:
