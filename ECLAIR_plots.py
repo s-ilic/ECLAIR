@@ -677,6 +677,7 @@ elif (3 in plot):
     )
     figs.append(fig3)
 
+# Mean acceptance plot
 if (4 in plot) & (n_par == 0):
     print("Cannot do plot 4 because no MCMC parameters have been kept.")
 elif (4 in plot):
@@ -695,7 +696,7 @@ elif (4 in plot):
     ax4.set_ylabel("Mean acceptance rate")
     figs.append(fig4)
 
-
+# Corner plot
 if (5 in plot) & (n_par == 0) & (n_blobs == 0):
     print("Cannot do plot 5 because no MCMC and derived parameters have been kept.")
 elif (5 in plot):
@@ -725,6 +726,7 @@ elif (5 in plot):
         fig5.set_figwidth(s['pix_x_size']/100)
     figs.append(fig5)
 
+# Show or save the plots
 if len(figs) > 0:
     if args.output_figures:
         for ix_plot, fig in zip(plot, figs):
