@@ -1,4 +1,3 @@
-import os
 import sys
 import ECLAIR_parser
 import numpy as np

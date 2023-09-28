@@ -576,7 +576,7 @@ def copy_ini_file(fname, params):
 
     ### Write inside log file
     with open(params['output_root'] + '.log', 'a') as f:
-        f.write(str(datetime.datetime.now())+"\n")
+        f.write("******"+str(datetime.datetime.now())+"******\n")
         if not params["continue_chain"]:
             f.write("Chain is started.\n\n")
         else:
