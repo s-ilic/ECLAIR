@@ -729,7 +729,7 @@ if len(figs) > 0:
     if args.output_figures:
         for ix_plot, fig in zip(plot, figs):
             figname = f"{ini_fname_nosuffix}_plot_{ix_plot}.png"
-            print(f"Plot {ix_plot} saved to {figname}")
+            print(f"Saving plot {ix_plot} to {figname}")
             fig.savefig(f"{ini_fname_nosuffix}_plot_{ix_plot}.png")
     else:
         plt.show()
