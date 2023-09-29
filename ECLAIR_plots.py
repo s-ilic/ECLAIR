@@ -359,7 +359,7 @@ if args.dict_var_names is not None:
         spline = line.split()
         is_comment_or_empty = spline == []
         if not is_comment_or_empty:
-            is_comment_or_empty = not line.strip()[0].isalpha()
+            is_comment_or_empty = not line.strip()[0].isalnum()
         if not is_comment_or_empty:
             if len(spline) == 2:
                 if spline[0] in dvn.keys():
@@ -377,7 +377,7 @@ if args.dict_labels is not None:
         spline = line.split()
         is_comment_or_empty = spline == []
         if not is_comment_or_empty:
-            is_comment_or_empty = not line.strip()[0].isalpha()
+            is_comment_or_empty = not line.strip()[0].isalnum()
         if not is_comment_or_empty:
             if len(spline) == 2:
                 if spline[0] in dl.keys():
