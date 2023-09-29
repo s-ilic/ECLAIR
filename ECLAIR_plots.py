@@ -356,13 +356,17 @@ if args.dict_var_names is not None:
     with open(args.dict_var_names, 'r') as f:
         lines = f.readlines()
     for line in lines:
+        is_comment_or_empty = True
         spline = line.split()
-        if len(spline) == 2:
-            if spline[0] in dvn.keys():
-                raise ValueError("Duplicate in variable names dictionary:\n%s" % line)
-            dvn[spline[0]] = spline[1]
-        elif spline != []:
-            raise ValueError("Formatting error in variable names dictionary:\n%s" % line)
+        if not (spline == []):
+            is_comment_or_empty = not line.strip()[0].isalpha()
+        if not is_comment_or_empty:
+            if len(spline) == 2:
+                if spline[0] in dvn.keys():
+                    raise ValueError("Duplicate in variable names dictionary:\n%s" % line)
+                dvn[spline[0]] = spline[1]
+            else:
+                raise ValueError("Formatting error in variable names dictionary:\n%s" % line)
 
 # Dictionary for labelling variables
 dl = {}
