@@ -356,9 +356,9 @@ if args.dict_var_names is not None:
     with open(args.dict_var_names, 'r') as f:
         lines = f.readlines()
     for line in lines:
-        is_comment_or_empty = True
         spline = line.split()
-        if not (spline == []):
+        is_comment_or_empty = spline == []
+        if not is_comment_or_empty:
             is_comment_or_empty = not line.strip()[0].isalpha()
         if not is_comment_or_empty:
             if len(spline) == 2:
@@ -374,9 +374,9 @@ if args.dict_labels is not None:
     with open(args.dict_labels, 'r') as f:
         lines = f.readlines()
     for line in lines:
-        is_comment_or_empty = True
         spline = line.split()
-        if not (spline == []):
+        is_comment_or_empty = spline == []
+        if not is_comment_or_empty:
             is_comment_or_empty = not line.strip()[0].isalpha()
         if not is_comment_or_empty:
             if len(spline) == 2:
