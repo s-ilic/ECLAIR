@@ -12,6 +12,20 @@ def is_number(s):
     except ValueError:
         return False
 
+# Returns boolean according to whether input string finished with [integer],
+# and if yes returns also the base string + the said integer
+def is_arrval(s):
+    if (s.count("(") != 1) or (s.count(")") != 1):
+        return [False, None, None]
+    if not s.endswith(")"):
+        return [False, None, None]
+    i1, i2 = s.index("("), s.index(")")
+    if i1 > i2:
+        return [False, None, None]
+    maybe_int = s[i1+1:i2]
+    if not maybe_int.isnumeric():
+        return [False, None, None]
+    return [True, s[:i1], int(maybe_int)]
 
 # Special string splitting function, which ignores the presence of
 # the separator character when it is between two double quotes
@@ -375,11 +389,11 @@ def parse_ini_file(fname, silent_mode=False):
                 i1 = tmp_cst_name.index("[")
                 i2 = tmp_cst_name.index("]")
                 cst_names.append(tmp_cst_name[i1+2:i2-1])
-                if '_val_' in tmp_cst_name:
+                test_arr = is_arrval(tmp_cst_name[i1+2:i2-1])
+                if test_arr[0]:
                     arr_names.append(tmp_cst_name[i1+2:i2-1])
-                    tmp = tmp_cst_name[i1+2:i2-1].split('_val_')
-                    if tmp[0] not in out['array_var'].keys():
-                        out['array_var'][tmp[0]] = 0
+                    if test_arr[1] not in out['array_var'].keys():
+                        out['array_var'][test_arr[1]] = 0
         # Deal with likelihood
         elif sline[0] == 'likelihood':
             if len(sline) != 2:
@@ -409,11 +423,11 @@ def parse_ini_file(fname, silent_mode=False):
             else:
                 out['var_par'].append(sline[:2] + [float(x) for x in sline[2:]])
                 vp_names.append(sline[1])
-                if '_val_' in sline[1]:
+                test_arr = is_arrval(sline[1])
+                if test_arr[0]:
                     arr_names.append(sline[1])
-                    tmp = sline[1].split('_val_')
-                    if tmp[0] not in out['array_var'].keys():
-                        out['array_var'][tmp[0]] = 0
+                    if test_arr[1] not in out['array_var'].keys():
+                        out['array_var'][test_arr[1]] = 0
         # Deal with gauss_prior
         elif sline[0] == 'gauss_prior':
             good1 = len(sline) == 4
@@ -444,11 +458,11 @@ def parse_ini_file(fname, silent_mode=False):
             elif is_number(sline[2]):
                 out['base_par_class'][sline[1]] = float(sline[2])
                 bpc_names.append(sline[1])
-                if '_val_' in sline[1]:
+                test_arr = is_arrval(sline[1])
+                if test_arr[0]:
                     arr_names.append(sline[1])
-                    tmp = sline[1].split('_val_')
-                    if tmp[0] not in out['array_var'].keys():
-                        out['array_var'][tmp[0]] = 0
+                    if test_arr[1] not in out['array_var'].keys():
+                        out['array_var'][test_arr[1]] = 0
             else:
                 out['base_par_class'][sline[1]] = sline[2]
                 bpc_names.append(sline[1])
@@ -505,12 +519,12 @@ def parse_ini_file(fname, silent_mode=False):
     for n in out['array_var'].keys():
         ixs = []
         for av in arr_names:
-            tmp = av.split('_val_')
-            if tmp[0] == n:
-                ixs.append(int(tmp[1]))
+            tmp = is_arrval(av)
+            if tmp[1] == n:
+                ixs.append(tmp[2])
         for i in range(max(ixs)+1):
-            not_good1 = f'{n}_val_{i}' not in arr_names
-            not_good2 = f'{n}_val_{i}' not in cst_names
+            not_good1 = f'{n}({i})' not in arr_names
+            not_good2 = f'{n}({i})' not in cst_names
             if not_good1 & not_good2:
                 str_err += (f'Error: element {i} of parameter array "{n}" '
                             'missing.\n')

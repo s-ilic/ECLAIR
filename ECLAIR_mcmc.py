@@ -86,8 +86,8 @@ def lnlike(p):
     for n in ini["array_var"].keys():
         all_val = []
         for i in range(ini["array_var"][n]):
-            all_val.append(str(final_class_input[f"{n}_val_{i}"]))
-            final_class_input.pop(f"{n}_val_{i}")
+            all_val.append(str(final_class_input[f"{n}({i})"]))
+            final_class_input.pop(f"{n}({i})")
         final_class_input[n] = ",".join(all_val)
 
     # Run class
@@ -280,8 +280,8 @@ if not ini["debug_mode"]:
 
 
 ### Do the actual MCMC
-print(f"### Starting MCMC in {ini['output_root']} ###")
 if (__name__ == "__main__") & (not ini["debug_mode"]):
+    print(f"### Starting MCMC in {ini['output_root']} ###")
     sampler = MCMCsampler.EnsembleSampler(
         n_walkers,
         n_dim,
