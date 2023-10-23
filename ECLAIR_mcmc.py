@@ -1,12 +1,12 @@
 import sys
-import ECLAIR_parser
+import ECLAIR_tools
 import numpy as np
 from scipy.stats import truncnorm
 
 
 ### Parse input ini file
 ini_fname = sys.argv[1]
-ini = ECLAIR_parser.parse_ini_file(ini_fname)
+ini = ECLAIR_tools.parse_ini_file(ini_fname)
 
 
 ### Import requested variant of class python wrapper
@@ -53,7 +53,7 @@ bad_res = tuple([-np.inf] * (2 + len(lkl) + len(ini["derivs"])))
 
 
 ### Actual loglike function
-def lnlike(p):
+def lnlike(p, sc):
 
     # Deal with uniform priors on MCMC parameters
     if not np.all((uni_pri[:, 0] <= p) & (p <= uni_pri[:, 1])):
@@ -62,9 +62,8 @@ def lnlike(p):
     # Deal with Gaussian priors on MCMC parameters
     lnp = 0.
     if len(ini["gauss_priors"]) > 0:
-        lnp = np.sum(
-            -0.5 * (p[ix_gauss_pri] - gauss_pri[:, 0])**2.
-            / gauss_pri[:, 1]**2.)
+        lnp = np.sum(-0.5 * (p[ix_gauss_pri] - gauss_pri[:, 0])**2.
+                     / gauss_pri[:, 1]**2.)
 
     # Create parameters dictionnary for class and likelihoods
     class_input = ini["base_par_class"].copy()
@@ -148,8 +147,11 @@ def lnlike(p):
     class_run.struct_cleanup()
     class_run.empty()
 
+    # Grab current temperature
+    current_T = ini["temperature"][sc.return_count()]
+
     # Return log(lkl*prior)/T, log(prior), log(lkl), derivs
-    res = [(sum(lnls) + lnp) / ini["temperature"], lnp] + lnls + derivs
+    res = [(sum(lnls) + lnp) / current_T, lnp] + lnls + derivs
     return tuple(res)
 
 
@@ -197,14 +199,14 @@ for i in range(n_dim):
 ### Read input file if provided and modify initial positions accordingly
 if ini["input_fname"] is not None:
     # Get parameters names and number of walkers from chain (from .ini file)
-    in_ini = ECLAIR_parser.parse_ini_file(
+    in_ini = ECLAIR_tools.parse_ini_file(
         f"{ini['input_fname'][:-4]}.ini",
         silent_mode=True)
-    in_names = ['lnprob']
-    in_names += [par[1] for par in in_ini["var_par"]]
-    in_names += ["lnprior"]
-    in_names += [f"lnlike_{name}" for name in in_ini["likelihoods"]]
-    in_names += [deriv[0] for deriv in in_ini["derivs"]]
+    in_names = (['lnprob']
+                + [par[1] for par in in_ini["var_par"]]
+                + ["lnprior"]
+                + [f"lnlike_{name}" for name in in_ini["likelihoods"]]
+                + [deriv[0] for deriv in in_ini["derivs"]])
     in_nw = in_ini["n_walkers"]
     # Get requested sample from chain
     input_p = np.loadtxt(ini['input_fname'])
@@ -243,9 +245,9 @@ if ini["input_fname"] is not None:
 
 
 ### Prepare some inputs for the MCMC
-blobs_dtype = [("lnprior", float)]
-blobs_dtype += [(f"lnlike_{name}", float) for name in ini["likelihoods"]]
-blobs_dtype += [(deriv[0], float) for deriv in ini["derivs"]]
+blobs_dtype = ([("lnprior", float)]
+               + [(f"lnlike_{name}", float) for name in ini["likelihoods"]]
+               + [(deriv[0], float) for deriv in ini["derivs"]])
 
 
 ### Initialize output file
@@ -274,36 +276,43 @@ if ini["debug_mode"]:
 if not ini["debug_mode"]:
     if ini["parallel"][0] == "MPI":
         if pool.is_master():
-            ECLAIR_parser.copy_ini_file(ini_fname, ini)
+            ECLAIR_tools.copy_ini_file(ini_fname, ini)
     else:
-        ECLAIR_parser.copy_ini_file(ini_fname, ini)
+        ECLAIR_tools.copy_ini_file(ini_fname, ini)
 
+### Prepare a step counter for the MCMC (used when varying temperature)
+step_counter = ECLAIR_tools.counter()
 
 ### Do the actual MCMC
 if (__name__ == "__main__") & (not ini["debug_mode"]):
+
     print(f"### Starting MCMC in {ini['output_root']} ###")
     sampler = MCMCsampler.EnsembleSampler(
         n_walkers,
         n_dim,
         lnlike,
+        args=(step_counter,),
         pool=pool,
         blobs_dtype=blobs_dtype,
-        **{k:v for k, v in ini['sampler_kwargs']},
+        **ini['sampler_kwargs'],
     )
-    ct = 0
-    for result in sampler.sample(p_start, iterations=n_steps, thin_by=thin_by, progress=False):
-        # Collect quantities depending on sampler
+    state, log_prob0, blobs0 = p_start, None, None
+    for ct in range(n_steps):
+        # Run sampler for one step and collect quantities
         if which_sampler == "emcee":
-            result_coords = result.coords
-            result_log_prob = result.log_prob
-            result_blobs = result.blobs
+            result = sampler.run_mcmc(state, 1, progress=False)
+            coords = result.coords
+            log_prob = result.log_prob
+            blobs = result.blobs
         elif which_sampler == "zeus":
-            result_coords = result[0]
-            result_log_prob = result[1]
-            result_blobs = result[2]
+            sampler.run_mcmc(state, 1, log_prob0=log_prob0,
+                             blobs0=blobs0, progress=False)
+            coords = sampler.get_last_sample()
+            log_prob = sampler.get_last_log_prob()
+            blobs = sampler.get_last_blobs()
         # One-time check for infinities
         if ct == 0:
-            n_finite = np.isfinite(result_log_prob).sum()
+            n_finite = np.isfinite(log_prob).sum()
             if n_finite < 2:
                 raise ValueError(
                     "Your chain cannot progress: "
@@ -321,19 +330,31 @@ if (__name__ == "__main__") & (not ini["debug_mode"]):
                     "mode to check your likelihoods."
                 )
         # Save current state in output file
-        with open(f"{ini['output_root']}.txt", "a") as output_file:
-            np.savetxt(
-                output_file,
-                np.hstack((
-                    np.arange(n_walkers)[:, None],
-                    result_log_prob[:, None],
-                    result_coords,
-                    result_blobs.view(dtype=np.float64).reshape(n_walkers, -1),
-                ))
-            )
+        if ct % thin_by == 0:
+            with open(f"{ini['output_root']}.txt", "a") as output_file:
+                np.savetxt(
+                    output_file,
+                    np.hstack((
+                        np.arange(n_walkers)[:, None],
+                        log_prob[:, None],
+                        coords,
+                        blobs.view(dtype=np.float64).reshape(n_walkers, -1),
+                    ))
+                )
+        # Increase counter
+        step_counter.increase_count()
+        # Rescale loglikes to account for temperature change
+        if ct != (n_steps-1):
+            old_T = ini["temperature"][ct]
+            new_T = ini["temperature"][ct+1]
+            if which_sampler == "emcee":
+                result.log_prob = result.log_prob * old_T / new_T
+                state = result
+            elif which_sampler == "zeus":
+                pass
         # Print MCMC progress
-        ct += 1
-        print(f"Current step : {ct} of {n_steps}")
+        print(f"Current step : {ct+1} of {n_steps}")
+    # Some MPI-related cleanup
     if ini["parallel"][0] == "MPI":
         pool.close()
         sys.exit()

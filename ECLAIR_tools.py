@@ -12,7 +12,7 @@ def is_number(s):
     except ValueError:
         return False
 
-# Returns boolean according to whether input string finished with [integer],
+# Returns boolean according to whether input string finished with (integer),
 # and if yes returns also the base string + the said integer
 def is_arrval(s):
     if (s.count("(") != 1) or (s.count(")") != 1):
@@ -54,6 +54,14 @@ def splt(s, sep=None, maxsplit=-1):
         final_splt += tmp_str.strip().split()
     return final_splt
 
+class counter():
+    def __init__(self):
+        self.count = 0
+    def return_count(self):
+        return self.count
+    def increase_count(self):
+        self.count += 1
+        return
 
 def parse_ini_file(fname, silent_mode=False):
 
@@ -79,7 +87,7 @@ def parse_ini_file(fname, silent_mode=False):
             is_comment = not line.strip()[0].isalpha()
             if not is_comment:
                 slines.append(sline)
-                flines.append(line.replace('\n',''))
+                flines.append(line.replace('\n','').strip())
                 options.append(sline[0])
 
     ### Deal with debug_mode
@@ -275,18 +283,40 @@ def parse_ini_file(fname, silent_mode=False):
     ### Deal with temperature
     ct = options.count('temperature')
     if ct == 0:
-        str_warn += '"temperature" not found, assuming temperature = 1.\n'
-        out['temperature'] = 1
+        str_warn += '"temperature" not found, assuming fixed to 1.\n'
+        out['temperature'] = [1]*out['n_steps']
     elif ct > 2:
         str_err += f'Multiple ({ct}) instances of "temperature" found.\n'
     else:
         ix = options.index('temperature')
-        if len(slines[ix]) != 2:
+        if len(slines[ix]) < 3:
             str_err += 'Wrong number of arguments for "temperature".\n'
-        elif not is_number(slines[ix][1]):
-            str_err += 'Wrong argument type for "temperature".\n'
+        elif slines[ix][1] not in ['inv', 'noinv']:
+            str_err += ('Second argument of "temperature" should be "inv" or '
+                        '"no inv"\n')
+        elif (len(slines[ix]) == 3) and is_number(slines[ix][2]):
+            out['temperature'] = [float(slines[ix][2])]*out['n_steps']
         else:
-            out['temperature'] = float(slines[ix][1])
+            tmp_str = (flines[ix].lstrip("temperature").lstrip()
+                       .lstrip("no").lstrip("inv").strip())
+            fail = False
+            try:
+                exec(f"global tmparr; tmparr = {tmp_str}")
+                if (type(tmparr) != list) and (type(tmparr) != np.ndarray):
+                    fail = True
+            except:
+                fail = True
+            if fail:
+                out['temperature'] = None
+                str_err += (f'Wrong syntax for "temperature": {tmp_str} is not '
+                             'a python-readable array of values.\n')
+            else:
+                if len(tmparr) != out['n_steps']:
+                    str_err += (f'Wrong syntax for "temperature": array of '
+                                'temperature values should have '
+                                f'{out["n_steps"]} elements.\n')
+                else:
+                    out['temperature'] = tmparr
 
     ### Deal with which_class
     ct = options.count('which_class')
@@ -316,7 +346,7 @@ def parse_ini_file(fname, silent_mode=False):
 
     ### Loop to catch parameters that can have multiple instances
     out['keep_input'] = []
-    out['sampler_kwargs'] = []
+    out['sampler_kwargs'] = {}
     out['constraints'] = []
     out['likelihoods'] = []
     out['derivs'] = []
@@ -325,9 +355,7 @@ def parse_ini_file(fname, silent_mode=False):
     out['drv_uni_priors'] = []
     out['var_par'] = []
     out['array_var'] = {}
-    out['base_par_class'] = {
-        'output':'', # background computation only by default
-    }
+    out['base_par_class'] = {}
     out['base_par_lkl'] = {}
     vp_names  = [] # all varying parameter names
     bpc_names = [] # non-varying class parameters names
@@ -345,17 +373,17 @@ def parse_ini_file(fname, silent_mode=False):
             ct_gt = fline.count(">")
             ct_lt = fline.count("<")
             if (ct_gt + ct_lt) != 1:
-                str_err += 'Wrong syntax in "keep_input":\n'
+                str_err += 'Wrong syntax for "keep_input":\n'
                 str_err += f'> {fline}\n'
                 continue
             sign = ">" if ct_gt == 1 else "<"
-            tmp = fline.strip().lstrip('keep_input').split(sign)
+            tmp = fline.lstrip('keep_input').split(sign)
             if len(tmp) != 2:
-                str_err += 'Wrong syntax in "keep_input":\n'
+                str_err += 'Wrong syntax for "keep_input":\n'
                 str_err += f'> {fline}\n'
                 continue
             if not is_number(tmp[1]):
-                str_err += 'Wrong syntax in "keep_input":\n'
+                str_err += 'Wrong syntax for "keep_input":\n'
                 str_err += f'> {fline}\n'
                 continue
             out['keep_input'].append([tmp[0].strip(), sign, tmp[1].strip()])
@@ -370,17 +398,17 @@ def parse_ini_file(fname, silent_mode=False):
                     str_err += f'> {fline}\n'
                 else:
                     tmp = float(sline[2]) if is_number(sline[2]) else sline[2]
-                    out['sampler_kwargs'].append([sline[1], tmp])
+                    out['sampler_kwargs'][sline[1]] = tmp
         # Deal with constraints
         elif sline[0] == 'constraint':
             if fline.count("=") != 1:
                 str_err += 'More/less than 1 equal sign in "constraint":\n'
                 str_err += f'> {fline}\n'
             elif len(fline.split("=")[0].split()) != 2:
-                str_err += 'Wrong syntax in "constraint":\n'
+                str_err += 'Wrong syntax for "constraint":\n'
                 str_err += f'> {fline}\n'
             elif fline.split("=")[1].strip() == '':
-                str_err += 'Wrong syntax in "constraint":\n'
+                str_err += 'Wrong syntax for "constraint":\n'
                 str_err += f'> {fline}\n'
             else:
                 tmp_cst = fline.replace('constraint','').strip()
