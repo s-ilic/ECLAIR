@@ -1,7 +1,7 @@
 import os
 import corner
 import numpy as np
-from ECLAIR_parser import *
+from ECLAIR_tools import *
 from itertools import product
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser,RawTextHelpFormatter
@@ -19,13 +19,13 @@ s["pix_y_size"] = 1080      # Optimize subplot grid for this screen pixel height
 # Plot 1 (likelihood plot)
 s["alpha_1"] = 0.1      # Opacity of plotted curves for walkers
 s["n_bins_1"] = 32      # Number of bins along step axis for percentile overplot
-s["pct"] = [2.5, 16, 50, 84, 97.5]      # Which percentiles to overplot
-s["pct_ls"] = [':','--','-','--',':']   # Linestyle for each percentile overplot
-s["pct_lw"] = [1]*5                     # Line width for percentile overplot
-s["pct_col"] = ["black"]*5              # Color for percentile overplot
+s["pct_1"] = [2.5, 16, 50, 84, 97.5]    # Which percentiles to overplot
+s["pct_ls_1"] = [':','--','-','--',':'] # Linestyle for each percentile overplot
+s["pct_lw_1"] = [1]*5                   # Line width for percentile overplot
+s["pct_col_1"] = ["black"]*5            # Color for percentile overplot
 
 # Plot 2 (MCMC parameters plot)
-s["alpha_2a"] = 0.1     # Opacity of plotted curves for walkers
+s["alpha_2"] = 0.1      # Opacity of plotted curves for walkers
 s["n_bins_2"] = 32      # Number of bins along step axis for cred. int. overplot
 s["CI_2"] = [68., 95.]           # Which credible interval to overplot
 s["CI_2_ls"] = ['--', ':']       # Linestyle for each credible interval overplot
@@ -47,8 +47,12 @@ s["margin_wspace_2"] = 0.34      #  /
 s["margin_hspace_2"] = 0.04      # /
 
 # Plot 3 (Derived parameters plot)
-s["alpha_3a"] = 0.1     # Opacity of plotted curves for walkers
+s["alpha_3"] = 0.1      # Opacity of plotted curves for walkers
 s["n_bins_3"] = 32      # Number of bins along step axis for cred. int. overplot
+s["pct_3"] = [2.5, 16, 50, 84, 97.5]    # Which lnlike percentiles to overplot
+s["pct_ls_3"] = [':','--','-','--',':'] # Linestyle for each percentile overplot
+s["pct_lw_3"] = [1]*5                   # Line width for percentile overplot
+s["pct_col_3"] = ["black"]*5            # Color for percentile overplot
 s["CI_3"] = [68., 95.]           # Which credible interval to overplot
 s["CI_3_ls"] = ['--', ':']       # Linestyle for each credible interval overplot
 s["CI_3_lw"] = [1, 1]            # Linestyle for each credible interval overplot
@@ -224,7 +228,7 @@ args = parser.parse_args()
 ### Checking input arguments ###
 ################################
 
-# Check nput chain path
+# Check input chain path
 if not os.path.isfile(args.file[0]):
     raise ValueError("Chain %s does not exist." % args.file[0])
 
@@ -505,11 +509,11 @@ if args.output_getdist:
 ### Misc functions ###
 ######################
 
-# Find Smallest X Percent Credible Interval (slightly biased)
-def F(samples, x):
+# Find Smallest X Percent Credible Interval
+def F(samples, X):
     s = samples.flatten()
     l = len(s)
-    f = x / 100. * l
+    f = X / 100. * l
     f_int = int(f)
     df = f - f_int
     sort_s = np.sort(s)
@@ -517,7 +521,7 @@ def F(samples, x):
     ix = diff.argmin()
     if ix == 0:
         lo = sort_s[0]
-        hi = sort_s[f_int] + (sort_s[f_int+1] - sort_s[f_int]) * df
+        hi = sort_s[f_int-1] + (sort_s[f_int] - sort_s[f_int-1]) * df
     elif ix == (l-f_int-1):
         lo = sort_s[l-f_int-1] - (sort_s[l-f_int] - sort_s[l-f_int-1]) * df
         hi = sort_s[-1]
@@ -541,7 +545,8 @@ if 1 in plot:
     fig1.suptitle(fname)
     ax1.plot(-1. * ln, alpha=s["alpha_1"])
     bin_edges = np.ceil(np.linspace(0,n_steps-1,s["n_bins_1"]+1)).astype("int")
-    for p, ls, lw, col in zip(s["pct"], s["pct_ls"], s["pct_lw"], s["pct_col"]):
+    for p, ls, lw, col in zip(s["pct_1"], s["pct_ls_1"], s["pct_lw_1"],
+                              s["pct_col_1"]):
         x = np.array([], dtype='int')
         y = np.array([])
         for i_bin in range(s["n_bins_1"]):
@@ -560,28 +565,29 @@ elif (2 in plot):
     print("[[2]] Preparing MCMC parameter plot...")
     nr, nc = 1, 1
     while (nr*nc) < n_par:
-        if (1.*nc/nr) <= s["pix_x_size"]/s["pix_y_size"]:
+        if (nc/nr) <= (s["pix_x_size"]/s["pix_y_size"]):
             nc += 1
         else:
             nr += 1
     fig2, ax2 = plt.subplots(nr, nc, squeeze=False, sharex=True,
                              figsize=(s['pix_x_size']/100,s['pix_y_size']/100))
     fig2.suptitle(fname)
-    b = np.ceil(np.linspace(0, n_steps-1, s["n_bins_2"]+1)).astype("int")
+    b = np.round(np.linspace(0, n_steps-1, s["n_bins_2"]+1)).astype("int")
     for ix, (r, c) in enumerate(product(range(nr), range(nc))):
         if ix >= n_par:
             ax2[r, c].set_visible(False)
             continue
-        ax2[r, c].plot(ch[:, :, ix], alpha=s["alpha_2a"])
+        ax2[r, c].plot(ch[:, :, ix], alpha=s["alpha_2"])
         y_lims = ax2[r,c].get_ylim()
         for CI, ls, lw in zip(s["CI_2"], s["CI_2_ls"], s["CI_2_lw"]):
             y = np.zeros((0, 2))
             for ib in range(s["n_bins_2"]):
-                y = np.row_stack((y, F(ch[b[ib]:b[ib+1], :, ix], CI)))
-            ax2[r,c].stairs(y[:, 0], b, baseline=None,
-                            color=s["CI_2_c1"], lw=lw, ls=ls)
-            ax2[r,c].stairs(y[:, 1], b, baseline=None,
-                            color=s["CI_2_c1"], lw=lw, ls=ls)
+                y = np.row_stack((y, F(ch[b[ib]:b[ib+1]+1, :, ix], CI)))
+            y = np.row_stack((y, y[-1, :]))
+            ax2[r,c].step(b, y[:, 0], where='post', color=s["CI_2_c1"],
+                          lw=lw, ls=ls)
+            ax2[r,c].step(b, y[:, 1], where='post', color=s["CI_2_c1"],
+                          lw=lw, ls=ls)
             tmp = F(ch[:n_steps//2, :, ix], CI)
             ax2[r,c].axhline(tmp[0], xmax=0.5, color=s["CI_2_c2"], lw=lw, ls=ls)
             ax2[r,c].axhline(tmp[1], xmax=0.5, color=s["CI_2_c2"], lw=lw, ls=ls)
@@ -624,34 +630,48 @@ elif (3 in plot):
     print("[[3]] Preparing derived parameter plot...")
     nr, nc = 1, 1
     while (nr*nc) < n_blobs:
-        if (1.*nc/nr) <= s["pix_x_size"]/s["pix_y_size"]:
+        if (nc/nr) <= (s["pix_x_size"]/s["pix_y_size"]):
             nc += 1
         else:
             nr += 1
     fig3, ax3 = plt.subplots(nr, nc, squeeze=False, sharex=True,
                              figsize=(s['pix_x_size']/100,s['pix_y_size']/100))
     fig3.suptitle(fname)
-    b = np.ceil(np.linspace(0, n_steps-1, s["n_bins_3"]+1)).astype("int")
+    b = np.round(np.linspace(0, n_steps-1, s["n_bins_3"]+1)).astype("int")
     for ix, (r, c) in enumerate(product(range(nr), range(nc))):
         if ix >= n_blobs:
             ax3[r, c].set_visible(False)
             continue
-        ax3[r, c].plot(bl[:, :, ix], alpha=s["alpha_3a"])
+        ax3[r, c].plot(bl[:, :, ix], alpha=s["alpha_3"])
         y_lims = ax3[r,c].get_ylim()
-        for CI, ls, lw in zip(s["CI_3"], s["CI_3_ls"], s["CI_3_lw"]):
-            y = np.zeros((0, 2))
-            for ib in range(s["n_bins_3"]):
-                y = np.row_stack((y, F(bl[b[ib]:b[ib+1], :, ix], CI)))
-            ax3[r,c].stairs(y[:, 0], b, baseline=None,
-                            color=s["CI_3_c1"], lw=lw, ls=ls)
-            ax3[r,c].stairs(y[:, 1], b, baseline=None,
-                            color=s["CI_3_c1"], lw=lw, ls=ls)
-            tmp = F(bl[:n_steps//3, :, ix], CI)
-            ax3[r,c].axhline(tmp[0], xmax=0.5, color=s["CI_3_c2"], lw=lw, ls=ls)
-            ax3[r,c].axhline(tmp[1], xmax=0.5, color=s["CI_3_c2"], lw=lw, ls=ls)
-            tmp = F(bl[n_steps//2:, :, ix], CI)
-            ax3[r,c].axhline(tmp[0], xmin=0.5, color=s["CI_3_c3"], lw=lw, ls=ls)
-            ax3[r,c].axhline(tmp[1], xmin=0.5, color=s["CI_3_c3"], lw=lw, ls=ls)
+        if ("lnprior" in blobs_names[ix]) or ("lnlike" in blobs_names[ix]):
+            for p, ls, lw, col in zip(s["pct_3"], s["pct_ls_3"], s["pct_lw_3"],
+                                      s["pct_col_3"]):
+                y = []
+                for ib in range(s["n_bins_3"]):
+                    y.append(np.percentile(bl[b[ib]:b[ib+1]+1, :, ix], p))
+                y.append(y[-1])
+                ax3[r,c].step(b, y, where='post', color=col, lw=lw, ls=ls)
+        else:
+            for CI, ls, lw in zip(s["CI_3"], s["CI_3_ls"], s["CI_3_lw"]):
+                y = np.zeros((0, 2))
+                for ib in range(s["n_bins_3"]):
+                    y = np.row_stack((y, F(bl[b[ib]:b[ib+1]+1, :, ix], CI)))
+                y = np.row_stack((y, y[-1, :]))
+                ax3[r,c].step(b, y[:, 0], where='post', color=s["CI_3_c1"],
+                            lw=lw, ls=ls)
+                ax3[r,c].step(b, y[:, 1], where='post', color=s["CI_3_c1"],
+                            lw=lw, ls=ls)
+                tmp = F(bl[:n_steps//3, :, ix], CI)
+                ax3[r,c].axhline(tmp[0], xmax=0.5, color=s["CI_3_c2"],
+                                 lw=lw, ls=ls)
+                ax3[r,c].axhline(tmp[1], xmax=0.5, color=s["CI_3_c2"],
+                                 lw=lw, ls=ls)
+                tmp = F(bl[n_steps//2:, :, ix], CI)
+                ax3[r,c].axhline(tmp[0], xmin=0.5, color=s["CI_3_c3"],
+                                 lw=lw, ls=ls)
+                ax3[r,c].axhline(tmp[1], xmin=0.5, color=s["CI_3_c3"],
+                                 lw=lw, ls=ls)
         if blobs_names[ix] in drv_upri_dict.keys():
             pri = drv_upri_dict[blobs_names[ix]]
             ax3[r, c].fill_between(range(bl.shape[0]), y_lims[0]-1, pri[0],
@@ -690,12 +710,13 @@ elif (4 in plot):
                              figsize=(s['pix_x_size']/100,s['pix_y_size']/100))
     fig4.suptitle(fname)
     test = (ch[1:, :, 0] - ch[:-1, :, 0]) != 0.
-    b = np.ceil(np.linspace(0, n_steps-2, s["n_bins_4"]+1)).astype("int")
+    b = np.round(np.linspace(0, n_steps-2, s["n_bins_4"]+1)).astype("int")
     y = []
     for ib in range(s["n_bins_4"]):
-        y.append(test[b[ib]:b[ib+1], :].mean())
+        y.append(test[b[ib]:b[ib+1]+1, :].mean())
+    y.append(y[-1])
     ax4.plot(test.mean(axis=1), color=s["mean_alpha"], alpha=s["mean_col"])
-    ax4.stairs(y, b, baseline=None, color=s["bmean_col"], lw=s["bmean_lw"])
+    ax4.step(b, y, where='post', color=s["bmean_col"], lw=s["bmean_lw"])
     ax4.set_xlabel("MCMC step")
     ax4.set_ylabel("Mean acceptance rate")
     figs.append(fig4)
