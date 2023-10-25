@@ -263,9 +263,13 @@ if not ini["continue_chain"] and not ini["debug_mode"]:
                           + "\n")
 
 
+### Prepare a step counter for the MCMC (used when varying temperature)
+step_counter = ECLAIR_tools.counter()
+
+
 ### In debug mode, compute a single likelihood to print potential error messages
 if ini["debug_mode"]:
-    test_lnl = lnlike(p_start[0])
+    test_lnl = lnlike(p_start[0], step_counter)
     print(f"lnpost={test_lnl[0]}")
     print(f"lnprior={test_lnl[1]}")
     for i, n in enumerate(ini["likelihoods"]):
@@ -280,8 +284,6 @@ if not ini["debug_mode"]:
     else:
         ECLAIR_tools.copy_ini_file(ini_fname, ini)
 
-### Prepare a step counter for the MCMC (used when varying temperature)
-step_counter = ECLAIR_tools.counter()
 
 ### Do the actual MCMC
 if (__name__ == "__main__") & (not ini["debug_mode"]):
