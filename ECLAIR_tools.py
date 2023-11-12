@@ -3,6 +3,7 @@ import datetime
 import subprocess
 import numpy as np
 from os.path import isfile
+from collections.abc import Iterable
 
 # Returns boolean according to whether input is a number
 def is_number(s):
@@ -185,7 +186,7 @@ def parse_ini_file(fname, silent_mode=False):
         if isfile(outname):
             str_err += (f'The output chain ({outname}) already exists. Set '
                         '"continue_chain" to yes if you want to append new '
-                        'samples to it.')
+                        'samples to it.\n')
 
     ### Deal with choice of MCMC sampler
     ct = options.count('which_sampler')
@@ -284,39 +285,58 @@ def parse_ini_file(fname, silent_mode=False):
     ct = options.count('temperature')
     if ct == 0:
         str_warn += '"temperature" not found, assuming fixed to 1.\n'
-        out['temperature'] = [1]*out['n_steps']
+        out['temperature'] = [[1., out['n_steps']]]
+        out['temperature_is_notinv'] = True
     elif ct > 2:
         str_err += f'Multiple ({ct}) instances of "temperature" found.\n'
     else:
         ix = options.index('temperature')
         if len(slines[ix]) < 3:
             str_err += 'Wrong number of arguments for "temperature".\n'
-        elif slines[ix][1] not in ['inv', 'noinv']:
+        elif slines[ix][1] not in ['inv', 'notinv']:
             str_err += ('Second argument of "temperature" should be "inv" or '
-                        '"no inv"\n')
+                        '"notinv"\n')
         elif (len(slines[ix]) == 3) and is_number(slines[ix][2]):
-            out['temperature'] = [float(slines[ix][2])]*out['n_steps']
+            out['temperature'] = [[float(slines[ix][2]), out['n_steps']]]
+            out['temperature_is_notinv'] = True
         else:
             tmp_str = (flines[ix].lstrip("temperature").lstrip()
                        .lstrip("no").lstrip("inv").strip())
             fail = False
             try:
                 exec(f"global tmparr; tmparr = {tmp_str}")
-                if (type(tmparr) != list) and (type(tmparr) != np.ndarray):
+                if not isinstance(tmparr, Iterable):
                     fail = True
+                elif any([not isinstance(arr, Iterable) for arr in tmparr]):
+                    fail = True
+                elif any([len(arr) != 2 for arr in tmparr]):
+                    fail = True
+                elif any([not is_number(arr[0]) for arr in tmparr]):
+                    fail = True
+                elif any([arr[0]<0 for arr in tmparr]):
+                    fail = True
+                elif any([type(arr[1]) != int for arr in tmparr]):
+                    fail = True
+                elif any([arr[1]<=0 for arr in tmparr]):
+                    fail = True
+                else:
+                    n_temp_steps = 0
+                    for arr in tmparr:
+                        n_temp_steps += arr[1]
             except:
                 fail = True
             if fail:
                 out['temperature'] = None
                 str_err += (f'Wrong syntax for "temperature": {tmp_str} is not '
-                             'a python-readable array of values.\n')
+                             'a list of [float, int] lists.\n')
             else:
-                if len(tmparr) != out['n_steps']:
-                    str_err += (f'Wrong syntax for "temperature": array of '
-                                'temperature values should have '
-                                f'{out["n_steps"]} elements.\n')
+                if n_temp_steps != out['n_steps']:
+                    str_err += (f'Wrong syntax for "temperature": the total '
+                                'number of temperature values should be '
+                                f'{out["n_steps"]}.\n')
                 else:
                     out['temperature'] = tmparr
+                    out['temperature_is_notinv'] = slines[ix][1] == 'notinv'
 
     ### Deal with which_class
     ct = options.count('which_class')

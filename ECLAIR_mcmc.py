@@ -53,7 +53,7 @@ bad_res = tuple([-np.inf] * (2 + len(lkl) + len(ini["derivs"])))
 
 
 ### Actual loglike function
-def lnlike(p, sc):
+def lnlike(p, counter):
 
     # Deal with uniform priors on MCMC parameters
     if not np.all((uni_pri[:, 0] <= p) & (p <= uni_pri[:, 1])):
@@ -147,11 +147,14 @@ def lnlike(p, sc):
     class_run.struct_cleanup()
     class_run.empty()
 
-    # Grab current temperature
-    current_T = ini["temperature"][sc.return_count()]
+    # Grab current temperature (or inverse temperature)
+    if ini["temperature_is_notinv"]:
+        fact_T = 1. / ini["temperature"][counter.return_count()][0]
+    else:
+        fact_T = ini["temperature"][counter.return_count()][0]
 
     # Return log(lkl*prior)/T, log(prior), log(lkl), derivs
-    res = [(sum(lnls) + lnp) / current_T, lnp] + lnls + derivs
+    res = [(sum(lnls) + lnp) * fact_T, lnp] + lnls + derivs
     return tuple(res)
 
 
@@ -289,6 +292,7 @@ if not ini["debug_mode"]:
 if (__name__ == "__main__") & (not ini["debug_mode"]):
 
     print(f"### Starting MCMC in {ini['output_root']} ###")
+
     sampler = MCMCsampler.EnsembleSampler(
         n_walkers,
         n_dim,
@@ -298,64 +302,63 @@ if (__name__ == "__main__") & (not ini["debug_mode"]):
         blobs_dtype=blobs_dtype,
         **ini['sampler_kwargs'],
     )
-    state, log_prob0, blobs0 = p_start, None, None
-    for ct in range(n_steps):
-        # Run sampler for one step and collect quantities
-        if which_sampler == "emcee":
-            result = sampler.run_mcmc(state, 1, progress=False)
-            coords = result.coords
-            log_prob = result.log_prob
-            blobs = result.blobs
-        elif which_sampler == "zeus":
-            sampler.run_mcmc(state, 1, log_prob0=log_prob0,
-                             blobs0=blobs0, progress=False)
-            coords = sampler.get_last_sample()
-            log_prob = sampler.get_last_log_prob()
-            blobs = sampler.get_last_blobs()
-        # One-time check for infinities
-        if ct == 0:
-            n_finite = np.isfinite(log_prob).sum()
-            if n_finite < 2:
-                raise ValueError(
-                    "Your chain cannot progress: "
-                    "less than 2 of your walkers are starting at a finite "
-                    "value of the posterior. Please check if your starting "
-                    "positions are correct, and/or use debug mode to check "
-                    "your likelihoods."
-                )
-            elif n_finite < (0.5 * n_walkers):
-                print(
-                    "Warning, your chain will take time to converge: "
-                    f"only {n_finite * 100. / n_walkers}% of your walkers are "
-                    "starting at a finite value of the posterior. Please check "
-                    "if your starting positions are correct, and/or use debug "
-                    "mode to check your likelihoods."
-                )
-        # Save current state in output file
-        if ct % thin_by == 0:
-            with open(f"{ini['output_root']}.txt", "a") as output_file:
-                np.savetxt(
-                    output_file,
-                    np.hstack((
-                        np.arange(n_walkers)[:, None],
-                        log_prob[:, None],
-                        coords,
-                        blobs.view(dtype=np.float64).reshape(n_walkers, -1),
-                    ))
-                )
-        # Increase counter
-        step_counter.increase_count()
-        # Rescale loglikes to account for temperature change
-        if ct != (n_steps-1):
-            old_T = ini["temperature"][ct]
-            new_T = ini["temperature"][ct+1]
+    start, log_prob0, blobs0, ct = p_start, None, None, 0
+    for ix, T_list in enumerate(ini['temperature']):
+        for result in sampler.sample(start, log_prob0=log_prob0, blobs0=blobs0,
+                                     iterations=T_list[1],
+                                     thin_by=thin_by, progress=False):
+            # Collect quantities
             if which_sampler == "emcee":
-                result.log_prob = result.log_prob * old_T / new_T
-                state = result
+                coords = result.coords
+                log_prob = result.log_prob
+                blobs = result.blobs
             elif which_sampler == "zeus":
-                pass
-        # Print MCMC progress
-        print(f"Current step : {ct+1} of {n_steps}")
+                coords = result[0]
+                log_prob = result[1]
+                blobs = result[2]
+            # One-time check for infinities
+            if ct == 0:
+                n_finite = np.isfinite(log_prob).sum()
+                if n_finite < 2:
+                    raise ValueError(
+                        "Your chain cannot progress: "
+                        "less than 2 of your walkers are starting at a finite "
+                        "value of the posterior. Please check if your starting "
+                        "positions are correct, and/or use debug mode to check "
+                        "your likelihoods."
+                    )
+                elif n_finite < (0.5 * n_walkers):
+                    print(
+                        "Warning, your chain will take time to converge: "
+                        f"only {n_finite * 100. / n_walkers}% of your walkers "
+                        "are starting at a finite value of the posterior. "
+                        "Please check if your starting positions are correct, "
+                        "and/or use debug_mode to check your likelihoods."
+                    )
+            # Save current state in output file
+            if ct % thin_by == 0:
+                with open(f"{ini['output_root']}.txt", "a") as output_file:
+                    np.savetxt(
+                        output_file,
+                        np.hstack((
+                            np.arange(n_walkers)[:, None],
+                            log_prob[:, None],
+                            coords,
+                            blobs.view(dtype=np.float64).reshape(n_walkers, -1),
+                        ))
+                    )
+            # Print then increase MCMC counter
+            print(f"Current step: {ct+1} of {n_steps}")
+            ct += 1
+        # Rescale loglikes to account for temperature change
+        if ix < (len(ini['temperature'])-1):
+            old_T = ini["temperature"][ix][0]
+            new_T = ini["temperature"][ix+1][0]
+            start = coords.copy()
+            log_prob0 = log_prob.copy() * old_T / new_T
+            blobs0 = blobs.copy()
+        # Increase temperature counter
+        step_counter.increase_count()
     # Some MPI-related cleanup
     if ini["parallel"][0] == "MPI":
         pool.close()
