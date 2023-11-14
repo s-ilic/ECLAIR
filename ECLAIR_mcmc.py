@@ -211,13 +211,16 @@ if ini["input_fname"] is not None:
                 + [f"lnlike_{name}" for name in in_ini["likelihoods"]]
                 + [deriv[0] for deriv in in_ini["derivs"]])
     in_nw = in_ini["n_walkers"]
-    # Get requested sample from chain
+    # Read previous chain, reshape, trim, reverse and reshape again
     input_p = np.loadtxt(ini['input_fname'])
-    step_ix = (ini["ch_start"] if ini["ch_start"] >= 0
-               else input_p.shape[0] // in_nw + ini["ch_start"])
-    input_p = input_p[:(step_ix+1)*in_nw, 1:][::-1, :]
-    # Grab all the unique samples (using the first MCMC parameter values)
-    input_p = input_p[np.sort(np.unique(input_p[:,0], return_index=True)[1]), :]
+    in_nd = input_p.shape[1]
+    input_p = input_p.reshape(-1, in_nw, in_nd)
+    in_ns = input_p.shape[0]
+    max_ix = ini["ch_start"] if ini["ch_start"] >= 0 else in_ns+ini["ch_start"]
+    input_p = input_p[:max_ix+1, :, 1:][::-1, :, :].reshape(-1, in_nd-1)
+    # Grab all the unique samples, in order
+    keep_ix = np.sort(np.unique(input_p, axis=0, return_index=True)[1])
+    input_p = input_p[keep_ix, :]
     # Trim that sample if requested
     for k in ini['keep_input']:
         if k[0] in in_names:
