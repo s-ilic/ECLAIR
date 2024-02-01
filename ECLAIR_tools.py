@@ -13,8 +13,8 @@ def is_number(s):
     except ValueError:
         return False
 
-# Returns boolean according to whether input string finished with (integer),
-# and if yes returns also the base string + the said integer
+# Returns boolean according to whether input string finished with "(N)" where N
+# is an integer, and if yes returns also the base string + the said integer
 def is_arrval(s):
     if (s.count("(") != 1) or (s.count(")") != 1):
         return [False, None, None]
@@ -298,7 +298,7 @@ def parse_ini_file(fname, silent_mode=False):
                         '"notinv"\n')
         elif (len(slines[ix]) == 3) and is_number(slines[ix][2]):
             out['temperature'] = [[float(slines[ix][2]), out['n_steps']]]
-            out['temperature_is_notinv'] = True
+            out['temperature_is_notinv'] = slines[ix][1] == 'notinv'
         else:
             tmp_str = (flines[ix].lstrip("temperature").lstrip()
                        .lstrip("no").lstrip("inv").strip())
