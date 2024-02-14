@@ -273,6 +273,22 @@ if not ini["continue_chain"] and not ini["debug_mode"]:
 step_counter = ECLAIR_tools.counter()
 
 
+### Required steps if profiles are requested
+# Adjust walker positions
+for p in ini["profiles"]:
+    ix = var_names.index(p[0])
+    p_start[:, ix] = p[1]
+# Prepare extra arguments for emcee special profiling move
+if len(ini["profiles"]) > 0:
+    extra_args = {}
+    if ini["temperature_is_notinv"]:
+        extra_args['temperature_array'] = [T[0] for T in ini["temperature"]]
+    else:
+        extra_args['temperature_array'] = [1./T[0] for T in ini["temperature"]]
+    extra_args['indexes_to_keep'] = [var_names.index(p[0]) for p in ini["profiles"]]
+    extra_args['counter'] = step_counter
+
+
 ### In debug mode, compute a single likelihood to print potential error messages
 if ini["debug_mode"]:
     test_lnl = lnlike(p_start[0], step_counter)
@@ -296,6 +312,13 @@ if (__name__ == "__main__") & (not ini["debug_mode"]):
 
     print(f"### Starting MCMC in {ini['output_root']} ###")
 
+    # Prepare sampler extra keywords
+    sampler_kwargs = {}
+    for k, v in ini['sampler_kwargs'].items():
+        print(f"sampler_kwargs['{k}'] = {v}")
+        exec(f"sampler_kwargs['{k}'] = {v}")
+
+    # Create sampler and run
     sampler = MCMCsampler.EnsembleSampler(
         n_walkers,
         n_dim,
@@ -303,7 +326,7 @@ if (__name__ == "__main__") & (not ini["debug_mode"]):
         args=(step_counter,),
         pool=pool,
         blobs_dtype=blobs_dtype,
-        **ini['sampler_kwargs'],
+        **sampler_kwargs,
     )
     start, log_prob0, blobs0, ct = p_start, None, None, 0
     for ix, T_list in enumerate(ini['temperature']):

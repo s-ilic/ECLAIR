@@ -301,7 +301,7 @@ def parse_ini_file(fname, silent_mode=False):
             out['temperature_is_notinv'] = slines[ix][1] == 'notinv'
         else:
             tmp_str = (flines[ix].lstrip("temperature").lstrip()
-                       .lstrip("no").lstrip("inv").strip())
+                       .lstrip("not").lstrip("inv").strip())
             fail = False
             try:
                 exec(f"global tmparr; tmparr = {tmp_str}")
@@ -332,8 +332,9 @@ def parse_ini_file(fname, silent_mode=False):
             else:
                 if n_temp_steps != out['n_steps']:
                     str_err += (f'Wrong syntax for "temperature": the total '
-                                'number of temperature values should be '
-                                f'{out["n_steps"]}.\n')
+                                'number of temperature values provided '
+                                f'({n_temp_steps}) should be the same as the '
+                                f'number of MCMC steps ({out["n_steps"]}).\n')
                 else:
                     out['temperature'] = tmparr
                     out['temperature_is_notinv'] = slines[ix][1] == 'notinv'
@@ -377,6 +378,7 @@ def parse_ini_file(fname, silent_mode=False):
     out['array_var'] = {}
     out['base_par_class'] = {}
     out['base_par_lkl'] = {}
+    out['profiles'] = []
     vp_names  = [] # all varying parameter names
     bpc_names = [] # non-varying class parameters names
     bpl_names = [] # non-varying other parameters names
@@ -417,8 +419,7 @@ def parse_ini_file(fname, silent_mode=False):
                     str_err += 'Wrong argument type for "sampler_kwarg":\n'
                     str_err += f'> {fline}\n'
                 else:
-                    tmp = float(sline[2]) if is_number(sline[2]) else sline[2]
-                    out['sampler_kwargs'][sline[1]] = tmp
+                    out['sampler_kwargs'][sline[1]] = sline[2]
         # Deal with constraints
         elif sline[0] == 'constraint':
             if fline.count("=") != 1:
@@ -528,6 +529,32 @@ def parse_ini_file(fname, silent_mode=False):
                 else:
                     out['base_par_lkl'][sline[1]] = sline[2]
                 bpl_names.append(sline[1])
+        elif sline[0] == 'profile':
+            if len(sline) < 3:
+                str_err += 'Wrong "profile" format:\n'
+                str_err += f'> {fline}\n'
+            elif sline[1] not in vp_names:
+                str_err += ('Your requested profile parameter is not a varying '
+                            'MCMC parameter\n')
+                str_err += f'> {fline}\n'
+            else:
+                tmp_str = fline.lstrip("profile").lstrip().lstrip(sline[1]).strip()
+                fail = False
+                try:
+                    exec(f"global tmparr; tmparr = {tmp_str}")
+                    if not isinstance(tmparr, Iterable):
+                        fail = True
+                    elif any([not is_number(arr) for arr in tmparr]):
+                        fail = True
+                    else:
+                        n_temp_steps = len(tmparr)
+                except:
+                    fail = True
+                if fail:
+                    str_err += (f'Wrong syntax for "profile": {tmp_str} is not '
+                                'a list of floats.\n')
+                else:
+                    out['profiles'].append([sline[1], tmparr])
         # Warn about unknown options
         else:
             known_other_options = [
@@ -549,6 +576,27 @@ def parse_ini_file(fname, silent_mode=False):
     ### Adjust number of walkers if "proportional" option is requested
     if out['n_walkers_type'] == 'prop_to':
         out['n_walkers'] *= len(out['var_par'])
+
+    ### Check profiled parameters (if requested)
+    if len(out['profiles']) > 0:
+        for p in out['profiles']:
+            if len(p[1]) != out['n_walkers']:
+                str_err += (f'Wrong syntax for "profile" for {p[0]}: the total '
+                            f'number of provided profiled values ({len(p[1])}) '
+                            'is not equal to the number of walkers '
+                            f'({out["n_walkers"]}).\n')
+        if out['which_sampler'] != 'emcee':
+            str_err += ('Profiles are only possible with the emcee sampler '
+                        f'(you requested {out["which_sampler"]}).\n')
+        else:
+            import emcee
+            if not hasattr(emcee.moves, "StretchMove_except_some"):
+                str_err += ('Profiles are only possible with a custom version '
+                            'of the emcee sampler which you can get at '
+                            'https://github.com/s-ilic/emcee.\n')
+        if "moves" in out['sampler_kwargs']:
+            str_warn += ('The moves options for emcee will be overrided for '
+                         'a special move to allow for profiling parameters.\n')
 
     ### Check for duplicate parameters
     for n in vp_names:
