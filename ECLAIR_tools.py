@@ -419,8 +419,8 @@ def parse_ini_file(fname, silent_mode=False):
                     str_err += 'Wrong argument type for "sampler_kwarg":\n'
                     str_err += f'> {fline}\n'
                 else:
-                    arg = fline.lstrip('sampler_kwarg').lstrip(sline[1])
-                    out['sampler_kwargs'][sline[1]] = arg
+                    arg = fline.lstrip('sampler_kwarg').strip().lstrip(sline[1])
+                    out['sampler_kwargs'][sline[1]] = arg.strip()
         # Deal with constraints
         elif sline[0] == 'constraint':
             if fline.count("=") != 1:
