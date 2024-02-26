@@ -390,7 +390,7 @@ def parse_ini_file(fname, silent_mode=False):
         if sline[0] == 'keep_input':
             if len(sline) < 2:
                 str_err += 'Wrong number of arguments for "keep_input":\n'
-                str_err += f'> {sline}\n'
+                str_err += f'> {fline}\n'
                 continue
             ct_gt = fline.count(">")
             ct_lt = fline.count("<")
@@ -411,15 +411,16 @@ def parse_ini_file(fname, silent_mode=False):
             out['keep_input'].append([tmp[0].strip(), sign, tmp[1].strip()])
         # Deal with options of MCMC sampler
         elif sline[0] == 'sampler_kwarg':
-            if len(sline) != 3:
+            if len(sline) < 3:
                 str_err += 'Wrong number of arguments for "sampler_kwarg":\n'
-                str_err += f'> {sline}\n'
+                str_err += f'> {fline}\n'
             else:
                 if is_number(sline[1]):
                     str_err += 'Wrong argument type for "sampler_kwarg":\n'
                     str_err += f'> {fline}\n'
                 else:
-                    out['sampler_kwargs'][sline[1]] = sline[2]
+                    arg = fline.lstrip('sampler_kwarg').lstrip(sline[1])
+                    out['sampler_kwargs'][sline[1]] = arg
         # Deal with constraints
         elif sline[0] == 'constraint':
             if fline.count("=") != 1:
