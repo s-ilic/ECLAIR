@@ -534,10 +534,6 @@ def parse_ini_file(fname, silent_mode=False):
             if len(sline) < 3:
                 str_err += 'Wrong "profile" format:\n'
                 str_err += f'> {fline}\n'
-            elif sline[1] not in vp_names:
-                str_err += ('Your requested profile parameter is not a varying '
-                            'MCMC parameter\n')
-                str_err += f'> {fline}\n'
             else:
                 tmp_str = fline.lstrip("profile").lstrip().lstrip(sline[1]).strip()
                 fail = False
@@ -586,6 +582,9 @@ def parse_ini_file(fname, silent_mode=False):
                             f'number of provided profiled values ({len(p[1])}) '
                             'is not equal to the number of walkers '
                             f'({out["n_walkers"]}).\n')
+            if p[0] not in vp_names:
+                str_err += (f'Your requested profile parameter {p[0]} is not a '
+                            'varying MCMC parameter\n')
         if out['which_sampler'] != 'emcee':
             str_err += ('Profiles are only possible with the emcee sampler '
                         f'(you requested {out["which_sampler"]}).\n')
@@ -595,9 +594,14 @@ def parse_ini_file(fname, silent_mode=False):
                 str_err += ('Profiles are only possible with a custom version '
                             'of the emcee sampler which you can get at '
                             'https://github.com/s-ilic/emcee.\n')
-        if "moves" in out['sampler_kwargs']:
-            str_warn += ('The moves options for emcee will be overrided for '
-                         'a special move to allow for profiling parameters.\n')
+        if "moves" not in out['sampler_kwargs']:
+            str_err += ('You need to specify a special emcee move '
+                        '(StretchMove_except_some) to allow for profiling '
+                        'parameters.\n')
+        elif "StretchMove_except_some" not in out['sampler_kwargs']['moves']:
+            str_err += ('You need to specify a special emcee move '
+                        '(StretchMove_except_some) to allow for profiling '
+                        'parameters.\n')
 
     ### Check for duplicate parameters
     for n in vp_names:
