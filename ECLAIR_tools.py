@@ -574,7 +574,7 @@ def parse_ini_file(fname, silent_mode=False):
     if out['n_walkers_type'] == 'prop_to':
         out['n_walkers'] *= len(out['var_par'])
 
-    ### Check profiled parameters (if requested)
+    ### Checks for profiling parameters (if requested)
     if len(out['profiles']) > 0:
         for p in out['profiles']:
             if len(p[1]) != out['n_walkers']:
@@ -585,23 +585,28 @@ def parse_ini_file(fname, silent_mode=False):
             if p[0] not in vp_names:
                 str_err += (f'Your requested profile parameter {p[0]} is not a '
                             'varying MCMC parameter\n')
-        if out['which_sampler'] != 'emcee':
-            str_err += ('Profiles are only possible with the emcee sampler '
-                        f'(you requested {out["which_sampler"]}).\n')
-        else:
+        if out['which_sampler'] == 'emcee':
             import emcee
             if not hasattr(emcee.moves, "StretchMove_except_some"):
                 str_err += ('Profiles are only possible with a custom version '
                             'of the emcee sampler which you can get at '
                             'https://github.com/s-ilic/emcee.\n')
+            move_name = "StretchMove_except_some"
+        elif out['which_sampler'] == 'zeus':
+            import zeus
+            if not hasattr(zeus.moves, "DifferentialMove_except_some"):
+                str_err += ('Profiles are only possible with a custom version '
+                            'of the zeus sampler which you can get at '
+                            'https://github.com/s-ilic/zeus.\n')
+            move_name = "DifferentialMove_except_some"
         if "moves" not in out['sampler_kwargs']:
-            str_err += ('You need to specify a special emcee move '
-                        '(StretchMove_except_some) to allow for profiling '
-                        'parameters.\n')
-        elif "StretchMove_except_some" not in out['sampler_kwargs']['moves']:
-            str_err += ('You need to specify a special emcee move '
-                        '(StretchMove_except_some) to allow for profiling '
-                        'parameters.\n')
+            str_err += ('You need to specify a special sampler move '
+                        f'({move_name}) to allow for profiling '
+                        'parameters (see GitHub wiki).\n')
+        elif move_name not in out['sampler_kwargs']['moves']:
+            str_err += ('You need to specify a special sampler move '
+                        f'({move_name}) to allow for profiling '
+                        'parameters (see GitHub wiki).\n')
 
     ### Check for duplicate parameters
     for n in vp_names:
