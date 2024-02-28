@@ -23,10 +23,11 @@ elif which_sampler == "zeus":
 
 
 ### Import and store in list all requested log(likelihoods)
-lkl = []
+lkls = []
 for like_name in ini["likelihoods"]:
     exec(f"import likelihoods.{like_name}")
     exec(f"lkl.append(likelihoods.{like_name}.get_loglike)")
+    # exec(f"lkls.append(likelihoods.{like_name}.likelihood(ini['base_par_lkl']))")
 
 
 ### Various useful quantities
@@ -49,7 +50,7 @@ drv_gauss_pri = [n[0] for n in ini["drv_gauss_priors"]]
 drv_uni_pri = [n[0] for n in ini["drv_uni_priors"]]
 
 # "Bad result" to be returned by lnlike() if evaluation fails in any way
-bad_res = tuple([-np.inf] * (2 + len(lkl) + len(ini["derivs"])))
+bad_res = tuple([-np.inf] * (2 + len(lkls) + len(ini["derivs"])))
 
 
 ### Actual loglike function
@@ -102,10 +103,11 @@ def lnlike(p, counter):
         return bad_res
 
     # Compute likelihoods
-    lnls = [0.]*len(lkl)
-    for i, like in enumerate(lkl):
+    lnls = [0.]*len(lkls)
+    for i, lkl in enumerate(lkls):
         try:
             lnls[i] = float(like(class_input, lkl_input, class_run))
+            # lnls[i] = lkl.get_loglike(class_input, lkl_input, class_run)
         except Exception as e:
             if ini["debug_mode"]:
                 print(f"The likelihood '{ini['likelihoods'][i]}' "
@@ -281,12 +283,13 @@ for p in ini["profiles"]:
 # Prepare extra arguments for emcee special profiling move
 if len(ini["profiles"]) > 0:
     extra_args = {}
-    if ini["temperature_is_notinv"]:
-        extra_args['temperature_array'] = [T[0] for T in ini["temperature"]]
-    else:
-        extra_args['temperature_array'] = [1./T[0] for T in ini["temperature"]]
     extra_args['indexes_to_keep'] = [var_names.index(p[0]) for p in ini["profiles"]]
-    extra_args['counter'] = step_counter
+    if which_sampler == "emcee":
+        if ini["temperature_is_notinv"]:
+            extra_args['temperature_array'] = [T[0] for T in ini["temperature"]]
+        else:
+            extra_args['temperature_array'] = [1./T[0] for T in ini["temperature"]]
+        extra_args['counter'] = step_counter
 
 
 ### In debug mode, compute a single likelihood to print potential error messages
@@ -315,7 +318,6 @@ if (__name__ == "__main__") & (not ini["debug_mode"]):
     # Prepare sampler extra keywords
     sampler_kwargs = {}
     for k, v in ini['sampler_kwargs'].items():
-        print(f"sampler_kwargs['{k}'] = {v}")
         exec(f"sampler_kwargs['{k}'] = {v}")
 
     # Create sampler and run
