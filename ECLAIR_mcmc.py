@@ -26,7 +26,7 @@ elif which_sampler == "zeus":
 lkls = []
 for like_name in ini["likelihoods"]:
     exec(f"import likelihoods.{like_name}")
-    exec(f"lkl.append(likelihoods.{like_name}.get_loglike)")
+    exec(f"lkls.append(likelihoods.{like_name}.get_loglike)")
     # exec(f"lkls.append(likelihoods.{like_name}.likelihood(ini['base_par_lkl']))")
 
 
