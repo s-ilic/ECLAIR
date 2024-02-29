@@ -106,7 +106,7 @@ def lnlike(p, counter):
     lnls = [0.]*len(lkls)
     for i, lkl in enumerate(lkls):
         try:
-            lnls[i] = float(like(class_input, lkl_input, class_run))
+            lnls[i] = float(lkl(class_input, lkl_input, class_run))
             # lnls[i] = lkl.get_loglike(class_input, lkl_input, class_run)
         except Exception as e:
             if ini["debug_mode"]:
