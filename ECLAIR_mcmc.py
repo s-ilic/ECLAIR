@@ -26,8 +26,7 @@ elif which_sampler == "zeus":
 lkls = []
 for like_name in ini["likelihoods"]:
     exec(f"import likelihoods.{like_name}")
-    exec(f"lkls.append(likelihoods.{like_name}.get_loglike)")
-    # exec(f"lkls.append(likelihoods.{like_name}.likelihood(ini['base_par_lkl']))")
+    exec(f"lkls.append(likelihoods.{like_name}.likelihood(ini['base_par_lkl']))")
 
 
 ### Various useful quantities
@@ -106,8 +105,7 @@ def lnlike(p, counter):
     lnls = [0.]*len(lkls)
     for i, lkl in enumerate(lkls):
         try:
-            lnls[i] = float(lkl(class_input, lkl_input, class_run))
-            # lnls[i] = lkl.get_loglike(class_input, lkl_input, class_run)
+            lnls[i] = lkl.get_loglike(class_input, lkl_input, class_run)
         except Exception as e:
             if ini["debug_mode"]:
                 print(f"The likelihood '{ini['likelihoods'][i]}' "

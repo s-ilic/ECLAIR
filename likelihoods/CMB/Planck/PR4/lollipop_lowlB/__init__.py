@@ -143,14 +143,18 @@ def _compute_chi2_1field(cl, params_values):
 ### Main likelihood function ###
 ################################
 
-def get_loglike(class_input, likes_input, class_run):
-    cl = class_run.lensed_cl()
-    for s in ['tt', 'ee', 'te', 'bb']:
-        cl[s] *= 1e12 * class_run.T_cmb()**2.
-    if 'eb' not in cl.keys():
-        cl['eb'] = cl['ee'].copy() * 0.
-    if mode == "lowlEB":
-        chi2 = _compute_chi2_2fields(cl, likes_input)
-    elif mode in ["lowlE", "lowlB"]:
-        chi2 = _compute_chi2_1field(cl, likes_input)
-    return -0.5 * chi2
+class likelihood:
+    def __init__(self, lkl_input):
+        pass
+
+    def get_loglike(self, class_input, likes_input, class_run):
+        cl = class_run.lensed_cl()
+        for s in ['tt', 'ee', 'te', 'bb']:
+            cl[s] *= 1e12 * class_run.T_cmb()**2.
+        if 'eb' not in cl.keys():
+            cl['eb'] = cl['ee'].copy() * 0.
+        if mode == "lowlEB":
+            chi2 = _compute_chi2_2fields(cl, likes_input)
+        elif mode in ["lowlE", "lowlB"]:
+            chi2 = _compute_chi2_1field(cl, likes_input)
+        return -0.5 * chi2

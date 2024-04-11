@@ -1,7 +1,11 @@
 import numpy as np
 
 ### BAO "2014" data (used in Planck 2015 as ext. data)
-def get_loglike(class_input, likes_input, class_run):
+class likelihood:
+  def __init__(self, lkl_input):
+    pass
+
+  def get_loglike(self, class_input, lkl_input, class_run):
     lnl = 0.
     rs = class_run.rs_drag()
     # 6DF from 1106.3366

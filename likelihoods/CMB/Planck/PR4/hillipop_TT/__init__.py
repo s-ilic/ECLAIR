@@ -394,15 +394,19 @@ def compute_chi2(dlth, params_values):
 
     return chi2
 
-def get_loglike(class_input, likes_input, class_run):
-    dl = class_run.lensed_cl()
-    for s in ['tt', 'ee', 'te']:
-        dl[s] *= (1e12 * class_run.T_cmb()**2. *
-                  dl['ell'] * (dl['ell'] + 1) / 2. / np.pi)
-    lth = np.arange(lmax + 1)
-    dlth = {k.upper():dl[k][:lmax+1] for k in dl.keys()}
-    dlth['ET'] = dlth['TE']
+class likelihood:
+    def __init__(self, lkl_input):
+        pass
 
-    chi2 = compute_chi2(dlth, likes_input)
+    def get_loglike(self, class_input, likes_input, class_run):
+        dl = class_run.lensed_cl()
+        for s in ['tt', 'ee', 'te']:
+            dl[s] *= (1e12 * class_run.T_cmb()**2. *
+                    dl['ell'] * (dl['ell'] + 1) / 2. / np.pi)
+        lth = np.arange(lmax + 1)
+        dlth = {k.upper():dl[k][:lmax+1] for k in dl.keys()}
+        dlth['ET'] = dlth['TE']
 
-    return -0.5 * chi2
+        chi2 = compute_chi2(dlth, likes_input)
+
+        return -0.5 * chi2
