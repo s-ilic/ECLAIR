@@ -1,5 +1,4 @@
 import os
-import corner
 import numpy as np
 from ECLAIR_tools import *
 from itertools import product
@@ -83,7 +82,8 @@ s["bmean_lw"] = 1.5         # Width of binned mean acceptance curve
 s["plot_density"] = False    # Display 2D density on corner plot
 s["plot_datapoints"] = False # Display data points on corner plot
 s["plot_contours"] = True    # Display 2D contour levels on corner plot
-s["levels"] = [0.68, 0.95]   # Which levels for 2D contours to plot
+s["levels"] = [0.68, 0.95]   # Which levels to plot for 2D contours
+
 
 ###############################
 ### Parsing input arguments ###
@@ -725,6 +725,7 @@ elif (4 in plot):
 if (5 in plot) & (n_par == 0) & (n_blobs == 0):
     print("Cannot do plot 5 because no MCMC and derived parameters have been kept.")
 elif (5 in plot):
+    import corner
     print("[[5]] Preparing corner plot...")
     rch = np.zeros((n_steps * n_walkers, 0))
     if n_par != 0:
