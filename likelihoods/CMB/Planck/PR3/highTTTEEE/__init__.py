@@ -19,4 +19,4 @@ class likelihood:
         class_run.lensed_cl()['te'][:2509] * 1e12 * class_run.T_cmb()**2.,
         np.array([lkl_input[par] for par in self.like_pars])
     ))
-    return self.like(args)
+    return self.like(args)[0]

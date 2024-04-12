@@ -17,4 +17,4 @@ class likelihood:
         class_run.lensed_cl()['pp'][:2501],
         np.array([lkl_input[par] for par in self.like_pars])
     ))
-    return self.like(args)
+    return self.like(args)[0]
