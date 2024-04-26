@@ -503,6 +503,10 @@ if args.output_getdist:
         labels=list(par_labels) + list(blobs_labels),
     )
     gdist.saveAsText(ini_fname_nosuffix + '_gdist')
+    with open(ini_fname_nosuffix + '_gdist.settings', 'w') as f:
+        f.write("Burn-in = %s\n" % burn)
+        f.write("Sample thinning = %s\n" % thin)
+        f.write("Walker thinning = %s\n" % thinw)
 
 
 ######################
