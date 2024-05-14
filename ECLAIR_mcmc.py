@@ -231,8 +231,8 @@ if ini["input_fname"] is not None:
                 g = input_p[:, par_ix] < float(k[2])
             input_p = input_p[g, :]
     if input_p.shape[0] < n_walkers:
-        raise ValueError("Not enough unique samples in your input chain fulfil "
-                         "your 'keep_input' requirements!")
+        raise ValueError("Not enough unique samples in your input chain fulfill"
+                         " your 'keep_input' requirements!")
     # Find which current chain parameters are in provided input file
     ix_in_names = []
     for name in var_names:
@@ -331,8 +331,7 @@ if (__name__ == "__main__") & (not ini["debug_mode"]):
     start, log_prob0, blobs0, ct = p_start, None, None, 0
     for ix, T_list in enumerate(ini['temperature']):
         for result in sampler.sample(start, log_prob0=log_prob0, blobs0=blobs0,
-                                     iterations=T_list[1],
-                                     thin_by=thin_by, progress=False):
+                                     iterations=T_list[1], progress=False):
             # Collect quantities
             if which_sampler == "emcee":
                 coords = result.coords
