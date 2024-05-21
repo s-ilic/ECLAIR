@@ -21,17 +21,43 @@
 
 ##### "BG.BAO.PlanckExtPR2":
 
-BAO data used in Planck 2015 papers as "external data", contains
+BAO data compilation used in Planck 2015 papers as "external data", contains
 - 6DF from Beutler et al. ([arXiv:1106.3366](https://arxiv.org/abs/1106.3366))
 - BOSS LOWZ & CMASS DR10&11 from Anderson et al. ([arXiv:1312.4877](https://arxiv.org/abs/1312.4877))
 - SDSS DR7 MGS from Ross et al. ([arXiv:1409.3242](https://arxiv.org/abs/1409.3242))
 
 ##### "BG.BAO.PlanckExtPR3":
 
-BAO data used in Planck 2018 papers as "external data", contains
+BAO data compilation used in Planck 2018 papers as "external data", contains
 - 6DF from Beutler et al. ([arXiv:1106.3366](https://arxiv.org/abs/1106.3366))
 - SDSS DR7 MGS Ross et al. ([arXiv:1409.3242](https://arxiv.org/abs/1409.3242))
 - SDSS DR12 Consensus BAO data from Alam et al. ([arXiv:1607.03155](https://arxiv.org/abs/1607.03155))
+
+##### "BG.BAO.SIXdF":
+
+BAO data from the 6dF survey (Beutler et al., [arXiv:1106.3366](https://arxiv.org/abs/1106.3366))
+
+##### "BG.BAO.SDSS":
+
+BAO data from various data releases of SDSS (explicit from the likelihood name)
+- **"BG.BAO.SDSS.DR7.MGS"**: Ross et al. ([arXiv:1409.3242](https://arxiv.org/abs/1409.3242))
+- **"BG.BAO.SDSS.DR12.LRG"**: Alam et al. ([arXiv:1607.03155](https://arxiv.org/abs/1607.03155))
+- **"BG.BAO.SDSS.DR16.ELG"**: Raichoor et al. ([arXiv:2007.09007](https://arxiv.org/abs/2007.09007))
+- **"BG.BAO.SDSS.DR16.LRG"**: Gil-Marín et al. ([arXiv:2007.08994](https://arxiv.org/abs/2007.08994))
+- **"BG.BAO.SDSS.DR16.LYAUTO"**: du Mas des Bourboux et al. ([arXiv:2007.08995](https://arxiv.org/abs/2007.08995))
+- **"BG.BAO.SDSS.DR16.LYxQSO"**: du Mas des Bourboux et al. ([arXiv:2007.08995](https://arxiv.org/abs/2007.08995))
+- **"BG.BAO.SDSS.DR16.QSO"**: Hou et al. ([arXiv:2007.08998](https://arxiv.org/abs/2007.08998))
+
+##### "BG.BAO.DESI":
+
+BAO data from the first data release of the DESI survey, from DESI Collaboration: Adame et al. ([arXiv:2404.03002](https://arxiv.org/abs/2404.03002)) and references therein
+- **"BG.BAO.DESI.BGS_Z1"**: BGS, 0.1 < z < 0.4
+- **"BG.BAO.DESI.ELG_Z2"**: ELG, 1.1 < z < 1.6
+- **"BG.BAO.DESI.LRGplusELG_Z1"**: LRG+ELG, 0.8 < z < 1.1
+- **"BG.BAO.DESI.LRG_Z1"**: LRG, 0.4 < z < 0.6
+- **"BG.BAO.DESI.LRG_Z2"**: LRG, 0.6 < z < 0.8
+- **"BG.BAO.DESI.LYA"**: Ly-alpha z ~ 2.33
+- **"BG.BAO.DESI.QSO_Z1"**: QSO, 0.8 < z < 2.1
 
 #### 1-b) H0 data
 
@@ -89,14 +115,22 @@ Planck Public Data Release 3 ([arXiv:1907.12875](https://arxiv.org/abs/1907.1287
 
 ##### "PR4":
 
-Planck Public Data Release 4 ([lollipop](https://github.com/planck-npipe/lollipop) and [hillipop](https://github.com/planck-npipe/hillipop))
+Likelihoods derived from Planck Public Data Release 4
+
+From [lollipop](https://github.com/planck-npipe/lollipop):
 - **"CMB.Planck.PR4.lollipop_lowlE"**: low-ell E polarisation likelihood
 - **"CMB.Planck.PR4.lollipop_lowlB"**: low-ell B polarisation likelihood
 - **"CMB.Planck.PR4.lollipop_lowlEB"**: low-ell temperature and E&B polarisation likelihood
+
+From [hillipop](https://github.com/planck-npipe/hillipop):
 - **"CMB.Planck.PR4.hillipop_TT"**: full high-ell temperature likelihood
 - **"CMB.Planck.PR4.hillipop_TE"**: full high-ell temperature/E polarisation correlation likelihood
 - **"CMB.Planck.PR4.hillipop_EE"**: full high-ell E polarisation likelihood
 - **"CMB.Planck.PR4.hillipop_TTTEEE"**: full high-ell temperature and E polarisation likelihood
+
+From [new lensing likelihood](https://github.com/carronj/planck_PR4_lensing):
+- **"CMB.Planck.PR4.lensing"**: lensing likelihood
+- **"CMB.Planck.PR4.lensing_marged"**: lensing likelihood marginalized over CMB power spectrum
 
 #### 2-b) ACT
 
