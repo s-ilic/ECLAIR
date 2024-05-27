@@ -534,6 +534,8 @@ def parse_ini_file(fname, silent_mode=False):
             if len(sline) < 3:
                 str_err += 'Wrong "profile" format:\n'
                 str_err += f'> {fline}\n'
+            elif sline[2] == "keep":
+                out['profiles'].append([sline[1]])
             else:
                 tmp_str = fline.lstrip("profile").lstrip().lstrip(sline[1]).strip()
                 fail = False
@@ -577,11 +579,12 @@ def parse_ini_file(fname, silent_mode=False):
     ### Checks for profiling parameters (if requested)
     if len(out['profiles']) > 0:
         for p in out['profiles']:
-            if len(p[1]) != out['n_walkers']:
-                str_err += (f'Wrong syntax for "profile" for {p[0]}: the total '
-                            f'number of provided profiled values ({len(p[1])}) '
-                            'is not equal to the number of walkers '
-                            f'({out["n_walkers"]}).\n')
+            if len(p) != 1:
+                if len(p[1]) != out['n_walkers']:
+                    str_err += (f'Wrong syntax for "profile" for {p[0]}: the '
+                                'total number of provided profiled values '
+                                f'({len(p[1])}) is not equal to the number of '
+                                f'walkers ({out["n_walkers"]}).\n')
             if p[0] not in vp_names:
                 str_err += (f'Your requested profile parameter {p[0]} is not a '
                             'varying MCMC parameter\n')

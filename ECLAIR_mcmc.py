@@ -276,8 +276,9 @@ step_counter = ECLAIR_tools.counter()
 ### Required steps if profiles are requested
 # Adjust walker positions
 for p in ini["profiles"]:
-    ix = var_names.index(p[0])
-    p_start[:, ix] = p[1]
+    if len(p) != 1:
+        ix = var_names.index(p[0])
+        p_start[:, ix] = p[1]
 # Prepare extra arguments for emcee special profiling move
 if len(ini["profiles"]) > 0:
     extra_args = {}
