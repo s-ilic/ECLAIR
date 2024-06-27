@@ -11,7 +11,10 @@ ini = ECLAIR_tools.parse_ini_file(ini_fname)
 
 ### Import requested variant of class python wrapper
 which_class = ini["which_class"]
-exec(f"import {which_class} as classy")
+if which_class == 'none':
+    classy = ECLAIR_tools.none_classy()
+else:
+    exec(f"import {which_class} as classy")
 
 
 ### Import requested MCMC sampler

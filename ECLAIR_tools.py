@@ -5,6 +5,23 @@ import numpy as np
 from os.path import isfile
 from collections.abc import Iterable
 
+# Empty classy-like instance for when no cosmological calculations are needed
+# (mostly for testing purposes)
+class none_classy:
+    class Class:
+        def set(self, x):
+            pass
+        def compute(self):
+            pass
+        def struct_cleanup(self):
+            pass
+        def empty(self):
+            pass
+        def get_background(self):
+            pass
+        def get_thermodynamics(self):
+            pass
+
 # Returns boolean according to whether input is a number
 def is_number(s):
     try:
@@ -354,11 +371,6 @@ def parse_ini_file(fname, silent_mode=False):
             str_err += 'Wrong argument type for "which_class".\n'
         else:
             out['which_class'] = slines[ix][1]
-
-    ### Check if any likelihood
-    ct = options.count('likelihood')
-    if ct == 0:
-        str_err += 'No likelihood specified.\n'
 
     ### Check if any free variables
     ct = options.count('var') + options.count('var_class')
