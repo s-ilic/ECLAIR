@@ -143,6 +143,16 @@ ACTPol Data release 4 ([arXiv:2007.07288](https://arxiv.org/abs/2007.07288) and 
 - **"CMB.ACT.ACTPol_DR4.lite_all"**: full ell range temperature and E polarisation likelihood likelihood marginalised over nuisance parameters
 - **"CMB.ACT.ACTPol_DR4.lite_for_Planck"**: temperature and E polarisation likelihood likelihood marginalised over nuisance parameters, over the restricted range of multipoles suitable for combination with the Planck CMB data
 
+##### "DR6_lensing":
+
+ACT DR6 CMB lensing likelihood ([arXiv:2304.05203](https://arxiv.org/abs/2304.05203) and [arXiv:2304.05202](https://arxiv.org/abs/2304.05202)), including variants combining ACT and Planck lensing measurements ([arXiv:2206.07773](https://arxiv.org/abs/2206.07773))
+- **"CMB.ACT.DR6_lensing.act_baseline**: for the ACT-only lensing power spectrum with the baseline multipole range
+- **"CMB.ACT.DR6_lensing.act_extended**: for the ACT-only lensing power spectrum with the extended multipole range (L<1250)
+- **"CMB.ACT.DR6_lensing.actplanck_baseline**: for the ACT+Planck lensing power spectrum with the baseline multipole range
+- **"CMB.ACT.DR6_lensing.actplanck_extended**: for the ACT+Planck lensing power spectrum with the extended multipole range (L<1250)
+
+All of the above likelihoods assume a combination with primary CMB measurements; lensing-only versions are also available with the same name plus the suffix **"_lens_only"**.
+
 #### 2-c) BICEP/Keck
 
 ##### "CMB.BK.BK15" :
