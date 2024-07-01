@@ -24,7 +24,7 @@ class likelihood:
     cl_te = class_run.lensed_cl()['te'] * 1e12 * class_run.T_cmb()**2.
     cl_ee = class_run.lensed_cl()['ee'] * 1e12 * class_run.T_cmb()**2.
     cl_bb = class_run.lensed_cl()['bb'] * 1e12 * class_run.T_cmb()**2.
-    cl_kk = 0.25*(ell_kk-1)*ell_kk*(ell_kk+1)*(ell_kk+2)*class_run.lensed_cl()['pp']
+    cl_kk = 0.25*(ell_kk*(ell_kk+1))**2.*class_run.lensed_cl()['pp']
     lnlike = alike.generic_lnlike(
       self.data_dict,
       ell_kk,

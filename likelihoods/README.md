@@ -140,8 +140,8 @@ ACTPol Data release 4 ([arXiv:2007.07288](https://arxiv.org/abs/2007.07288) and 
 - **"CMB.ACT.ACTPol_DR4.lite_onlyTT"**: full ell range temperature likelihood marginalised over nuisance parameters
 - **"CMB.ACT.ACTPol_DR4.lite_onlyTE"**: full ell range temperature/E polarisation correlation likelihood marginalised over nuisance parameters
 - **"CMB.ACT.ACTPol_DR4.lite_onlyEE"**: full ell range E polarisation likelihood marginalised over nuisance parameters
-- **"CMB.ACT.ACTPol_DR4.lite_all"**: full ell range temperature and E polarisation likelihood likelihood marginalised over nuisance parameters
-- **"CMB.ACT.ACTPol_DR4.lite_for_Planck"**: temperature and E polarisation likelihood likelihood marginalised over nuisance parameters, over the restricted range of multipoles suitable for combination with the Planck CMB data
+- **"CMB.ACT.ACTPol_DR4.lite_all"**: full ell range temperature and E polarisation likelihood marginalised over nuisance parameters
+- **"CMB.ACT.ACTPol_DR4.lite_for_Planck"**: temperature and E polarisation likelihood marginalised over nuisance parameters, over the restricted range of multipoles suitable for combination with the Planck CMB data
 
 ##### "DR6_lensing":
 
