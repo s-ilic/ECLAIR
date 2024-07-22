@@ -127,6 +127,8 @@ From [hillipop](https://github.com/planck-npipe/hillipop):
 - **"CMB.Planck.PR4.hillipop_TE"**: full high-ell temperature/E polarisation correlation likelihood
 - **"CMB.Planck.PR4.hillipop_EE"**: full high-ell E polarisation likelihood
 - **"CMB.Planck.PR4.hillipop_TTTEEE"**: full high-ell temperature and E polarisation likelihood
+- **"CMB.Planck.PR4.hillipop_TT_lite"**: binned version of the high-ell temperature likelihood
+- **"CMB.Planck.PR4.hillipop_TTTEEE_lite"**: binned version of the high-ell temperature and E polarisation likelihood
 
 From [new lensing likelihood](https://github.com/carronj/planck_PR4_lensing):
 - **"CMB.Planck.PR4.lensing"**: lensing likelihood
@@ -151,7 +153,7 @@ ACT DR6 CMB lensing likelihood ([arXiv:2304.05203](https://arxiv.org/abs/2304.05
 - **"CMB.ACT.DR6_lensing.actplanck_baseline**: for the ACT+Planck lensing power spectrum with the baseline multipole range
 - **"CMB.ACT.DR6_lensing.actplanck_extended**: for the ACT+Planck lensing power spectrum with the extended multipole range (L<1250)
 
-All of the above likelihoods assume a combination with primary CMB measurements; lensing-only versions are also available with the same name plus the suffix **"_lens_only"**.
+All of the above likelihoods are meant to be combined with primary CMB measurements; lensing-only versions are also available with the same name plus the suffix **"_lens_only"**.
 
 #### 2-c) BICEP/Keck
 
