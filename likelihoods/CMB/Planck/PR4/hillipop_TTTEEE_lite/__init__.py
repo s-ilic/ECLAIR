@@ -4,6 +4,7 @@ import os
 import re
 from itertools import combinations
 from typing import Optional
+from copy import deepcopy
 
 import astropy.io.fits as fits
 import numpy as np
@@ -20,7 +21,7 @@ planck_pr4_root = os.environ.get('PLANCK_PR4_DATA')
 if planck_pr4_root == None:
     raise ValueError('The environment variable PLANCK_PR4_DATA is not set.')
 
-likelihood_name = "TTTEEE"
+likelihood_name = "TTTEEE_lite"
 data_folder = planck_pr4_root + "/hillipop"
 multipoles_range_file = "data/binning_v4.2.fits"
 xspectra_basename = "data/dl_PR4_v4.2"
@@ -39,6 +40,10 @@ fg_list = {
     "tsz": fg.tsz_model,
     "szxcib": fg.szxcib_model,
 }
+
+#bintab for Hillipop lite
+lite_lmins = list( np.arange(30, 251, 1))+list( np.arange(251, 2500, 10))
+lite_lmaxs = list( np.arange(30, 251, 1))+list( np.arange(251, 2500, 10)+9)
 
 foregrounds = {
     'TT': {
@@ -66,7 +71,8 @@ _nxfreq = _nfreq * (_nfreq + 1) // 2
 _nxspec = _nmap * (_nmap - 1) // 2
 
 # Get likelihood name and add the associated mode
-likelihood_modes = [likelihood_name[i:i+2] for i in range(0,len(likelihood_name),2)]
+lkl_name = likelihood_name.replace("_lite","")
+likelihood_modes = [lkl_name[i:i+2] for i in range(0,len(lkl_name),2)]
 _is_mode = {mode: mode in likelihood_modes for mode in ["TT", "TE", "EE"]}
 _is_mode["ET"] = _is_mode["TE"]
 
@@ -164,9 +170,14 @@ def _get_matrix_size():
     # TT,EE,TEET
     for m in ["TT", "EE", "TE"]:
         if _is_mode[m]:
-            nells = _lmaxs[m] - _lmins[m] + 1
-            nell += np.sum([nells[_xspec2xfreq.index(k)] for k in range(_nxfreq)])
-
+            # nells = _lmaxs[m] - _lmins[m] + 1
+            # nell += np.sum([nells[_xspec2xfreq.index(k)] for k in range(_nxfreq)])
+            for xf in range(_nxfreq):
+                lmin = _lmins[m][_xspec2xfreq.index(xf)]
+                lmax = _lmaxs[m][_xspec2xfreq.index(xf)]
+                mywf = deepcopy(wf)
+                mywf.cut_binning( lmin, lmax)
+                nell += mywf.nbins
     return nell
 
 
@@ -181,6 +192,13 @@ filename = os.path.join(data_folder, multipoles_range_file)
 _lmins, _lmaxs = _set_multipole_ranges(filename)
 lmax = np.max([max(l) for l in _lmaxs.values()])
 
+#Bin strategy
+lite = True if 'lite' in likelihood_name else False
+if lite:
+    wf = tools.Bins( lite_lmins, lite_lmaxs)
+else:
+    wf = tools.Bins.fromdeltal( 2, lmax+1, 1)
+
 # Data
 basename = os.path.join(data_folder, xspectra_basename)
 _dldata = _read_dl_xspectra(basename)
@@ -193,11 +211,11 @@ _dlweight = {k:1/v**2 for k,v in dlsig.items()}
 # Inverted Covariance matrix
 filename = os.path.join(data_folder, covariance_matrix_file)
 # Sanity check
-m = re.search(".*_(.+?).fits", covariance_matrix_file)
-if not m or likelihood_name != m.group(1):
-    raise ValueError(
-        "The covariance matrix mode differs from the likelihood mode. Check the given path [%s]" % covariance_matrix_file
-    )
+# m = re.search(".*_(.+?).fits", covariance_matrix_file)
+# if not m or likelihood_name != m.group(1):
+#     raise ValueError(
+#         "The covariance matrix mode differs from the likelihood mode. Check the given path [%s]" % covariance_matrix_file
+#     )
 _invkll = _read_invcovmatrix(filename)
 _invkll = _invkll.astype('float32')
 
@@ -262,7 +280,9 @@ def _select_spectra(cl, mode):
     for xf in range(_nxfreq):
         lmin = _lmins[mode][_xspec2xfreq.index(xf)]
         lmax = _lmaxs[mode][_xspec2xfreq.index(xf)]
-        xl += list(acl[xf, lmin : lmax + 1])
+        mywf = deepcopy(wf)
+        mywf.cut_binning( lmin, lmax)
+        xl += list(mywf.bin_spectra(acl[xf]))
     return xl
 
 def _xspectra_to_xfreq(cl, weight, normed=True):
@@ -391,6 +411,10 @@ def compute_chi2(dlth, params_values):
     delta_cl = np.asarray(Xl).astype('float32')
     # chi2 = self.delta_cl @ self._invkll @ self.delta_cl
     chi2 = _invkll.dot(delta_cl).dot(delta_cl)
+
+    #protect against cast float32
+    alpha = 8. - np.ceil(np.log10(chi2))
+    chi2 = np.float64(np.round(chi2*10**alpha))*10**(-alpha)
 
     return chi2
 
