@@ -132,7 +132,7 @@ def lnlike(p, counter):
         th = class_run.get_thermodynamics()
         for deriv in ini["derivs"]:
             exec(f"derivs.append({deriv[1]})")
-            # Computed prior on derived parameter if requested
+            # Compute prior on derived parameter if requested
             if deriv[0] in drv_gauss_pri:
                 ix = drv_gauss_pri.index(deriv[0])
                 pri = ini["drv_gauss_priors"][ix]
