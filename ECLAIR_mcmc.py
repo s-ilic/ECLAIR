@@ -2,7 +2,7 @@ import sys
 import ECLAIR_tools
 import numpy as np
 from scipy.stats import truncnorm
-
+from time import time
 
 ### Parse input ini file
 ini_fname = sys.argv[1]
@@ -52,8 +52,10 @@ drv_gauss_pri = [n[0] for n in ini["drv_gauss_priors"]]
 drv_uni_pri = [n[0] for n in ini["drv_uni_priors"]]
 
 # "Bad result" to be returned by lnlike() if evaluation fails in any way
-bad_res = tuple([-np.inf] * (2 + len(lkls) + len(ini["derivs"])))
-
+bad_res = [-np.inf] * (2 + len(lkls) + len(ini["derivs"]))
+if ini["debug_mode"]:
+    bad_res += [-np.inf] * len(lkls)
+bad_res = tuple(bad_res)
 
 ### Actual loglike function
 def lnlike(p, counter):
@@ -93,6 +95,8 @@ def lnlike(p, counter):
         final_class_input[n] = ",".join(all_val)
 
     # Run class
+    if ini["debug_mode"]:
+        t0 = time()
     class_run = classy.Class()
     class_run.set(final_class_input)
     try:
@@ -103,12 +107,20 @@ def lnlike(p, counter):
         class_run.struct_cleanup()
         class_run.empty()
         return bad_res
+    if ini["debug_mode"]:
+        print(f"Class run in {time()-t0} second(s).")
 
     # Compute likelihoods
     lnls = [0.]*len(lkls)
+    if ini["debug_mode"]:
+        lnl_times = [0.]*len(lkls)
     for i, lkl in enumerate(lkls):
+        if ini["debug_mode"]:
+            t0 = time()
         try:
             lnls[i] = lkl.get_loglike(class_input, lkl_input, class_run)
+            if ini["debug_mode"]:
+                lnl_times[i] = time() - t0
         except Exception as e:
             if ini["debug_mode"]:
                 print(f"The likelihood '{ini['likelihoods'][i]}' "
@@ -158,6 +170,9 @@ def lnlike(p, counter):
 
     # Return log(lkl*prior)/T, log(prior), log(lkl), derivs
     res = [(sum(lnls) + lnp) * fact_T, lnp] + lnls + derivs
+    if ini["debug_mode"]:
+        res += [lnl_times]
+
     return tuple(res)
 
 
@@ -300,7 +315,7 @@ if ini["debug_mode"]:
     print(f"lnpost={test_lnl[0]}")
     print(f"lnprior={test_lnl[1]}")
     for i, n in enumerate(ini["likelihoods"]):
-        print(f"lnlike({n})={test_lnl[2+i]}")
+        print(f"lnlike({n})={test_lnl[2+i]} in {test_lnl[-1][i]} second(s)")
 
 
 ### Create copy of the ini file in output folder
