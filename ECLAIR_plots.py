@@ -560,7 +560,7 @@ if 1 in plot:
         ax1.plot(x, y, color=col, lw=lw, ls=ls)
     ax1.set_xlabel("MCMC step")
     ax1.set_ylabel("-log(likelihood)")
-    figs.append(fig1)
+    figs.append((1, fig1))
 
 # MCMC parameters plot
 if (2 in plot) & (n_par == 0):
@@ -625,7 +625,7 @@ elif (2 in plot):
         wspace = s["margin_wspace_2"],
         hspace = s["margin_hspace_2"],
     )
-    figs.append(fig2)
+    figs.append((2, fig2))
 
 # Derived parameters plot
 if (3 in plot) & (n_blobs == 0):
@@ -703,7 +703,7 @@ elif (3 in plot):
         wspace = s["margin_wspace_3"],
         hspace = s["margin_hspace_3"],
     )
-    figs.append(fig3)
+    figs.append((3, fig3))
 
 # Mean acceptance plot
 if (4 in plot) & (n_par == 0):
@@ -723,7 +723,7 @@ elif (4 in plot):
     ax4.step(b, y, where='post', color=s["bmean_col"], lw=s["bmean_lw"])
     ax4.set_xlabel("MCMC step")
     ax4.set_ylabel("Mean acceptance rate")
-    figs.append(fig4)
+    figs.append((4, fig4))
 
 # Corner plot
 if (5 in plot) & (n_par == 0) & (n_blobs == 0):
@@ -754,12 +754,12 @@ elif (5 in plot):
     else:
         fig5.set_figheight(s['pix_x_size']/100 * fh/fw)
         fig5.set_figwidth(s['pix_x_size']/100)
-    figs.append(fig5)
+    figs.append((5, fig5))
 
 # Show or save the plots
 if len(figs) > 0:
     if args.output_figures:
-        for ix_plot, fig in zip(plot, figs):
+        for ix_plot, fig in figs:
             figname = f"{ini_fname_nosuffix}_plot_{ix_plot}.png"
             print(f"Saving plot {ix_plot} to {figname}")
             fig.savefig(f"{ini_fname_nosuffix}_plot_{ix_plot}.png")
