@@ -500,7 +500,7 @@ n_blobs = bl.shape[2]
 if args.output_getdist:
     from getdist.mcsamples import MCSamples
     gdist = MCSamples(
-        ranges={**{par_names[i]: [lbs[i], ubs[i]] for i in range(n_par)}, **drv_gpri_dict},
+        ranges={**{par_names[i]: [lbs[i], ubs[i]] for i in range(n_par)}, **drv_upri_dict},
         samples=np.dstack((ch, bl)).reshape(-1, n_par + n_blobs),
         loglikes=(-1.*ln).reshape(-1),
         names=list(par_names) + list(blobs_names),
