@@ -485,10 +485,14 @@ if sum(g) == 0:
     bl = bl[:, :, []]
     blobs_names = blobs_names[[]]
     blobs_labels = blobs_labels[[]]
+    drv_upri_dict = {}
 else:
     bl = bl[:, :, keep_derived[g]]
     blobs_names = blobs_names[keep_derived[g]]
     blobs_labels = blobs_labels[keep_derived[g]]
+    for k in drv_upri_dict.keys():
+        if k not in blobs_names:
+            del drv_upri_dict[k]
 print('>>> Total number of derived parameters kept : %s (out of %s)' % (bl.shape[2], n_blobs))
 n_blobs = bl.shape[2]
 
@@ -496,7 +500,7 @@ n_blobs = bl.shape[2]
 if args.output_getdist:
     from getdist.mcsamples import MCSamples
     gdist = MCSamples(
-        ranges={par_names[i]: [lbs[i], ubs[i]] for i in range(n_par)},
+        ranges={**{par_names[i]: [lbs[i], ubs[i]] for i in range(n_par)}, **drv_gpri_dict},
         samples=np.dstack((ch, bl)).reshape(-1, n_par + n_blobs),
         loglikes=(-1.*ln).reshape(-1),
         names=list(par_names) + list(blobs_names),
