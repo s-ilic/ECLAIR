@@ -750,14 +750,14 @@ elif (5 in plot):
         labels=np.concatenate((par_labels, blobs_labels)),
     )
     fig5.suptitle(fname)
-    fh = fig5.get_figheight()
-    fw = fig5.get_figwidth()
-    if s['pix_x_size'] > s['pix_y_size']:
-        fig5.set_figheight(s['pix_y_size']/100)
-        fig5.set_figwidth(s['pix_y_size']/100 * fw/fh)
-    else:
-        fig5.set_figheight(s['pix_x_size']/100 * fh/fw)
-        fig5.set_figwidth(s['pix_x_size']/100)
+    # fh = fig5.get_figheight()
+    # fw = fig5.get_figwidth()
+    # if s['pix_x_size'] > s['pix_y_size']:
+    #     fig5.set_figheight(s['pix_y_size']/100)
+    #     fig5.set_figwidth(s['pix_y_size']/100 * fw/fh)
+    # else:
+    #     fig5.set_figheight(s['pix_x_size']/100 * fh/fw)
+    #     fig5.set_figwidth(s['pix_x_size']/100)
     figs.append((5, fig5))
 
 # Show or save the plots
