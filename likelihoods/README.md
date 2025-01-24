@@ -4,9 +4,9 @@
 ## Table of contents
 
 - [1) Background measurements](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#1-background-measurements)
-  - [1-a) BAO data](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#1-a-bao-data)
+  - [1-a) Baryon Acoustic Oscillations (BAO) data](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#1-a-bao-data)
   - [1-b) H0 data](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#1-b-h0-data)
-  - [1-c) SN data](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#1-c-sn-data)
+  - [1-c) Supernovae (SN) data](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#1-c-sn-data)
 - [2) Cosmic microwave background measurements](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#2-cosmic-microwave-background-measurements)
   - [2-a) Planck](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#2-a-planck)
   - [2-b) ACT](https://github.com/s-ilic/ECLAIR/tree/master/likelihoods#2-b-act)
@@ -17,7 +17,7 @@
 
 ### 1) Background measurements
 
-#### 1-a) BAO data
+#### 1-a) Baryon Acoustic Oscillations (BAO) data
 
 ##### "BG.BAO.PlanckExtPR2":
 
@@ -73,13 +73,23 @@ H0 measurements from Riess et al. ([arXiv:1903.07603](https://arxiv.org/abs/1903
 ##### "BG.H0.F20":
 H0 measurements from Freedman et al. ([arXiv:2002.01550](https://arxiv.org/abs/2002.01550))
 
-#### 1-c) SN data
+#### 1-c) Supernovae (SN) data
 
 ##### "BG.SN.JLA":
 Joint Light-curve Analysis Supernovae Sample from Betoule et al. ([arXiv:1401.4064](https://arxiv.org/abs/1401.4064)), unbinned version
 
 ##### "BG.SN.Pantheon":
 Combined Pantheon Supernovae Sample from Scolnic et al. ([arXiv:1710.00845](https://arxiv.org/abs/1710.00845))
+
+##### "BG.SN.DESY5":
+Dark Energy Survey Year 5 (DES-Y5) type Ia supernovae sample from DES Collaboration ([arXiv:2401.02929](https://arxiv.org/abs/2401.02929))
+
+##### "BG.SN.Union3":
+Union3 & UNITY1.5 type Ia supernovae sample from Rubin et al. ([arXiv:2311.12098](https://arxiv.org/abs/2311.12098))
+
+##### "BG.SN.PantheonPlus":
+Pantheon+ (without SH0ES) type Ia supernovae sample from Brout et al. ([arXiv:
+2202.04077](https://arxiv.org/abs/2202.04077))
 
 -------------
 

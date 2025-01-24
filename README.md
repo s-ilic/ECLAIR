@@ -6,7 +6,12 @@ with feedback and suggestions from: Michael Kopp, Louis Perenon, Daniel B. Thoma
 
 ## Purpose of the Code
 
-The ECLAIR suite of codes is meant to be used as a general inference tool, allowing to sample via MCMC techniques the posterior distribution of a set of parameters corresponding to a particular physical model, under the constraint of a number of datasets/likelihoods. It also contains a robust maximizer aimed at finding the point in parameter space corresponding to the best likelihood of any considered model. The suite also include a plotting script allowing to conveniently diagnose and check the convergence of a chain, as well as produce summary statistics on the parameters of interest.
+The ECLAIR suite of codes is a general inference tool, allowing the user to:
+- sample the posterior distribution of parameters from a given model, under the constraint of a number of datasets, via ensemble MCMC techniques;
+- estimate the point in parameter space corresponding to the best-fit likelihood value for the model, via a robust ensemble-based minimizer;
+- produce a profile likelihood for any model parameter, at a series of user-chosen points in parameter space.
+
+The suite also include plotting scripts allowing the user to conveniently diagnose and check the convergence of a chain, as well as produce summary statistics for the model parameters of interest.
 
 ## Prerequisites, installation, and usage
 
