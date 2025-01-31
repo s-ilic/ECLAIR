@@ -3,10 +3,19 @@ import ECLAIR_tools
 import numpy as np
 from scipy.stats import truncnorm
 from time import time
+from argparse import ArgumentParser,RawTextHelpFormatter
 
 ### Parse input ini file
 ini_fname = sys.argv[1]
 ini = ECLAIR_tools.parse_ini_file(ini_fname)
+
+
+### Check if debug mode is requested via command line
+parser = ArgumentParser(formatter_class=RawTextHelpFormatter)
+parser.add_argument("--debug", action="store_true", help="Run in debug mode")
+args = parser.parse_args()
+if args.debug:
+    ini["debug_mode"] = True
 
 
 ### Import requested variant of class python wrapper
