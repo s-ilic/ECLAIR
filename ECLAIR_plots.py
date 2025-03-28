@@ -44,6 +44,7 @@ s["margin_right_2"] = 0.99       #   \ Margin
 s["margin_top_2"] = 0.96         #   / settings
 s["margin_wspace_2"] = 0.34      #  /
 s["margin_hspace_2"] = 0.04      # /
+s["quantile_instead_2"] = False  # Use quantiles instead of CI for overplot
 
 # Plot 3 (Derived parameters plot)
 s["alpha_3"] = 0.1      # Opacity of plotted curves for walkers
@@ -70,6 +71,7 @@ s["margin_right_3"] = 0.99       #   \ Margin
 s["margin_top_3"] = 0.96         #   / settings
 s["margin_wspace_3"] = 0.34      #  /
 s["margin_hspace_3"] = 0.04      # /
+s["quantile_instead_3"] = False  # Use quantiles instead of CI for overplot
 
 # Plot 4 (Mean acceptance plot)
 s["n_bins_4"] = 32   # Number of bins along step axis for binned mean acceptance
@@ -521,7 +523,7 @@ if args.output_getdist:
 ######################
 
 # Find Smallest X Percent Credible Interval
-def F(samples, X):
+def SC(samples, X):
     s = samples.flatten()
     l = len(s)
     f = X / 100. * l
@@ -539,6 +541,14 @@ def F(samples, X):
     else:
         lo = sort_s[ix] + (sort_s[ix+1] - sort_s[ix]) * df / 2.
         hi = sort_s[f_int+ix] - (sort_s[f_int+ix+1] - sort_s[f_int+ix]) * df / 2.
+    return [lo, hi]
+
+# Return X percent symmetric quantiles
+def SQ(samples, X):
+    s = samples.flatten()
+    half_X_pct = (100. - X) / 2. / 100.
+    lo = np.quantile(s, half_X_pct)
+    hi = np.quantile(s, 1. - half_X_pct)
     return [lo, hi]
 
 
@@ -574,6 +584,7 @@ if (2 in plot) & (n_par == 0):
     print("Cannot do plot 2 because no MCMC parameters have been kept.")
 elif (2 in plot):
     print("[[2]] Preparing MCMC parameter plot...")
+    F = SQ if s["quantile_instead_2"] else SC
     nr, nc = 1, 1
     while (nr*nc) < n_par:
         if (nc/nr) <= (s["pix_x_size"]/s["pix_y_size"]):
@@ -639,6 +650,7 @@ if (3 in plot) & (n_blobs == 0):
     print("Cannot do plot 3 because no derived parameters have been kept.")
 elif (3 in plot):
     print("[[3]] Preparing derived parameter plot...")
+    F = SQ if s["quantile_instead_3"] else SC
     nr, nc = 1, 1
     while (nr*nc) < n_blobs:
         if (nc/nr) <= (s["pix_x_size"]/s["pix_y_size"]):
