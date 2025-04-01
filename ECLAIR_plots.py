@@ -4,6 +4,7 @@ from ECLAIR_tools import *
 from itertools import product
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser,RawTextHelpFormatter
+from scipy.fft import fft, ifft
 
 
 ###################################
@@ -221,6 +222,13 @@ parser.add_argument(
     help='Outputs requested figures in png format instead of displaying them\n'
          'on the screen. Figures will have the same root name as the chain\n'
          'with "_N.png" appended (where N is the figure number type).'
+)
+
+parser.add_argument(
+    '-ps',
+    '--print-summary',
+    action='store_true',
+    help='Outputs some summary statistics.'
 )
 
 args = parser.parse_args()
@@ -550,6 +558,57 @@ def SQ(samples, X):
     lo = np.quantile(s, half_X_pct)
     hi = np.quantile(s, 1. - half_X_pct)
     return [lo, hi]
+
+# Compute Integrated Autocorrelation Time (adapted from Minas Karamanis)
+def IAT(samples, c=5.0, norm=True):
+    x = np.atleast_1d(samples.T.reshape((-1), order='C'))
+    # Next largest power of 2
+    n = 1
+    while n < len(x):
+        n = n << 1
+    # Compute the auto-correlation function using FFT
+    f = fft(x - np.mean(x), n=2 * n)
+    acf = ifft(f * np.conjugate(f))[: len(x)].real
+    acf /= 4 * n
+    # Normalize
+    if norm:
+        acf /= acf[0]
+    taus = 2.0 * np.cumsum(acf) - 1.0
+    # Automated windowing procedure following Sokal (1989)
+    m = np.arange(len(taus)) < c * taus
+    if np.any(m):
+        window = np.argmin(m)
+    else:
+        window = len(taus) - 1
+    return taus[window]
+
+
+##################################
+### Produce summary statistics ###
+##################################
+
+if args.print_summary:
+    print(">>> Summary statistics:")
+    print("MCMC parameters:")
+    for ix, n in enumerate(par_names):
+        iat = IAT(ch[:, :, ix])
+        mean = np.mean(ch[:, :, ix])
+        std = np.std(ch[:, :, ix])
+        med = np.median(ch[:, :, ix])
+        q1 = np.percentile(ch[:, :, ix], 16)
+        q2 = np.percentile(ch[:, :, ix], 84)
+        print(f"- {n}: {iat:.2f} (IAT), {mean:.3f} (mean), {std:.3f} (std), "
+              f"{med:.3f} (median), [{q1:.3f}, {q2:.3f}] (68% CI)")
+    print("Derived parameters:")
+    for ix, n in enumerate(blobs_names):
+        iat = IAT(bl[:, :, ix])
+        mean = np.mean(bl[:, :, ix])
+        std = np.std(bl[:, :, ix])
+        med = np.median(bl[:, :, ix])
+        q1 = np.percentile(bl[:, :, ix], 16)
+        q2 = np.percentile(bl[:, :, ix], 84)
+        print(f"- {n}: {iat:.2f} (IAT), {mean:.3f} (mean), {std:.3f} (std), "
+              f"{med:.3f} (median), [{q1:.3f}, {q2:.3f}] (68% CI)")
 
 
 #####################
