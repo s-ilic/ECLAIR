@@ -48,16 +48,27 @@ BAO data from various data releases of SDSS (explicit from the likelihood name)
 - **"BG.BAO.SDSS.DR16.LYxQSO"**: du Mas des Bourboux et al. ([arXiv:2007.08995](https://arxiv.org/abs/2007.08995))
 - **"BG.BAO.SDSS.DR16.QSO"**: Hou et al. ([arXiv:2007.08998](https://arxiv.org/abs/2007.08998))
 
-##### "BG.BAO.DESI":
+##### "BG.BAO.DESI.DR1":
 
 BAO data from the first data release of the DESI survey, from DESI Collaboration: Adame et al. ([arXiv:2404.03002](https://arxiv.org/abs/2404.03002)) and references therein
-- **"BG.BAO.DESI.BGS_Z1"**: BGS, 0.1 < z < 0.4
-- **"BG.BAO.DESI.ELG_Z2"**: ELG, 1.1 < z < 1.6
-- **"BG.BAO.DESI.LRGplusELG_Z1"**: LRG+ELG, 0.8 < z < 1.1
-- **"BG.BAO.DESI.LRG_Z1"**: LRG, 0.4 < z < 0.6
-- **"BG.BAO.DESI.LRG_Z2"**: LRG, 0.6 < z < 0.8
-- **"BG.BAO.DESI.LYA"**: Ly-alpha z ~ 2.33
-- **"BG.BAO.DESI.QSO_Z1"**: QSO, 0.8 < z < 2.1
+- **"BG.BAO.DESI.DR1.BGS_Z1"**: BGS, 0.1 < z < 0.4
+- **"BG.BAO.DESI.DR1.ELG_Z2"**: ELG, 1.1 < z < 1.6
+- **"BG.BAO.DESI.DR1.LRGplusELG_Z1"**: LRG+ELG, 0.8 < z < 1.1
+- **"BG.BAO.DESI.DR1.LRG_Z1"**: LRG, 0.4 < z < 0.6
+- **"BG.BAO.DESI.DR1.LRG_Z2"**: LRG, 0.6 < z < 0.8
+- **"BG.BAO.DESI.DR1.LYA"**: Ly-alpha z ~ 2.33
+- **"BG.BAO.DESI.DR1.QSO_Z1"**: QSO, 0.8 < z < 2.1
+
+##### "BG.BAO.DESI.DR2":
+
+BAO data from the second data release of the DESI survey, from DESI Collaboration: Abdul-Karim et al. ([arXiv:2503.14738](https://arxiv.org/abs/2503.14738)) and references therein
+- **"BG.BAO.DESI.DR2.BGS_Z1"**: BGS, 0.1 < z < 0.4
+- **"BG.BAO.DESI.DR2.ELG_Z2"**: ELG, 1.1 < z < 1.6
+- **"BG.BAO.DESI.DR2.LRGplusELG_Z1"**: LRG+ELG, 0.8 < z < 1.1
+- **"BG.BAO.DESI.DR2.LRG_Z1"**: LRG, 0.4 < z < 0.6
+- **"BG.BAO.DESI.DR2.LRG_Z2"**: LRG, 0.6 < z < 0.8
+- **"BG.BAO.DESI.DR2.LYA"**: Ly-alpha z ~ 2.33
+- **"BG.BAO.DESI.DR2.QSO_Z1"**: QSO, 0.8 < z < 2.1
 
 #### 1-b) H0 data
 
@@ -164,6 +175,10 @@ ACT DR6 CMB lensing likelihood ([arXiv:2304.05203](https://arxiv.org/abs/2304.05
 - **"CMB.ACT.DR6_lensing.actplanck_extended**: for the ACT+Planck lensing power spectrum with the extended multipole range (L<1250)
 
 All of the above likelihoods are meant to be combined with primary CMB measurements; lensing-only versions are also available with the same name plus the suffix **"_lens_only"**.
+
+##### "DR6_lite":
+
+ACT DR6 primary CMB (TT, TE, EE) likelihood ([arXiv:2503.14452](https://arxiv.org/abs/2503.14452) in its "lite" version, i.e. foreground-marginalized
 
 #### 2-c) BICEP/Keck
 
