@@ -150,6 +150,7 @@ From [hillipop](https://github.com/planck-npipe/hillipop):
 - **"CMB.Planck.PR4.hillipop_TTTEEE"**: full high-ell temperature and E-mode polarisation likelihood
 - **"CMB.Planck.PR4.hillipop_TT_lite"**: binned version of the high-ell temperature likelihood
 - **"CMB.Planck.PR4.hillipop_TTTEEE_lite"**: binned version of the high-ell temperature and E-mode polarisation likelihood
+- **"CMB.Planck.PR4.hillipop_TTTEEE_ell_cut"**: high-ell temperature and E-mode polarisation likelihood with ell range selection
 
 From [new lensing likelihood](https://github.com/carronj/planck_PR4_lensing):
 - **"CMB.Planck.PR4.lensing"**: lensing likelihood
