@@ -120,6 +120,11 @@ def create_cut_covmat(lkl_input):
         if ell_lims[f'ell_min_{mode}'] > ell_lims[f'ell_max_{mode}']:
             raise ValueError(f"hillipop_TTTEEE_ell_min_{mode} must be <= hillipop_TTTEEE_ell_max_{mode}")
 
+    print("Creating cut covariance matrix with ell limits:")
+    print(f"TT: {ell_lims['ell_min_TT']} - {ell_lims['ell_max_TT']}")
+    print(f"EE: {ell_lims['ell_min_EE']} - {ell_lims['ell_max_EE']}")
+    print(f"TE: {ell_lims['ell_min_TE']} - {ell_lims['ell_max_TE']}")
+
     full_cov_fname = os.path.join(data_folder, "data/cov_PR4_v4.2_TTTEEE.npy")
     if os.path.isfile(full_cov_fname):
         cov = np.load(full_cov_fname)
