@@ -2,20 +2,6 @@ import os
 import numpy as np
 import astropy.io.fits as fits
 
-
-############
-# SETTINGS #
-############
-default_ell_lims = {
-    "hillipop_TTTEEE_ell_min_TT": 30,
-    "hillipop_TTTEEE_ell_max_TT": 2500,
-    "hillipop_TTTEEE_ell_min_EE": 30,
-    "hillipop_TTTEEE_ell_max_EE": 2000,
-    "hillipop_TTTEEE_ell_min_TE": 30,
-    "hillipop_TTTEEE_ell_max_TE": 2000,
-}
-##########
-
 planck_pr4_root = os.environ.get('PLANCK_PR4_DATA')
 likelihood_name = "TTTEEE"
 data_folder = planck_pr4_root + "/hillipop"
@@ -101,39 +87,41 @@ def _read_invcovmatrix(filename):
 
 def create_cut_covmat(lkl_input):
 
-    # Define ell limits
-    ell_lims = {}
-    for typ in ["min", "max"]:
-        for mode in ["TT", "EE", "TE"]:
-            if f'hillipop_TTTEEE_ell_{typ}_{mode}' in lkl_input:
-                ell_lims[f'ell_{typ}_{mode}'] = lkl_input[f'hillipop_TTTEEE_ell_{typ}_{mode}']
-            else:
-                ell_lims[f'ell_{typ}_{mode}'] = default_ell_lims[f'hillipop_TTTEEE_ell_{typ}_{mode}']
+    # Shortened names for ell limits
+    ell_lims = {
+        'lmin_TT': int(lkl_input['hillipop_TTTEEE_ell_min_TT']),
+        'lmax_TT': int(lkl_input['hillipop_TTTEEE_ell_max_TT']),
+        'lmin_EE': int(lkl_input['hillipop_TTTEEE_ell_min_EE']),
+        'lmax_EE': int(lkl_input['hillipop_TTTEEE_ell_max_EE']),
+        'lmin_TE': int(lkl_input['hillipop_TTTEEE_ell_min_TE']),
+        'lmax_TE': int(lkl_input['hillipop_TTTEEE_ell_max_TE']),
+    }
 
     # Check ell limits
     for mode in ["TT", "EE", "TE"]:
-        if ell_lims[f'ell_min_{mode}'] < 30:
+        if ell_lims[f'lmin_{mode}'] < 30:
             raise ValueError(f"hillipop_TTTEEE_ell_min_{mode} must be >= 30")
         maxi = 2500 if mode == "TT" else 2000
-        if ell_lims[f'ell_max_{mode}'] > maxi:
+        if ell_lims[f'lmax_{mode}'] > maxi:
             raise ValueError(f"hillipop_TTTEEE_ell_max_{mode} must be <= {maxi}")
-        if ell_lims[f'ell_min_{mode}'] > ell_lims[f'ell_max_{mode}']:
+        if ell_lims[f'lmin_{mode}'] > ell_lims[f'lmax_{mode}']:
             raise ValueError(f"hillipop_TTTEEE_ell_min_{mode} must be <= hillipop_TTTEEE_ell_max_{mode}")
-
-    print("Creating cut covariance matrix with ell limits:")
-    print(f"TT: {ell_lims['ell_min_TT']} - {ell_lims['ell_max_TT']}")
-    print(f"EE: {ell_lims['ell_min_EE']} - {ell_lims['ell_max_EE']}")
-    print(f"TE: {ell_lims['ell_min_TE']} - {ell_lims['ell_max_TE']}")
 
     full_cov_fname = os.path.join(data_folder, "data/cov_PR4_v4.2_TTTEEE.npy")
     if os.path.isfile(full_cov_fname):
         cov = np.load(full_cov_fname)
     else:
+        print("Creating full covariance matrix file")
         filename = os.path.join(data_folder, covariance_matrix_file)
         icov = _read_invcovmatrix(filename)
         #_invkll = _invkll.astype('float32')
         cov = np.linalg.inv(icov)
         np.save(full_cov_fname,  cov)
+
+    print("Creating cut covariance matrix with ell limits:")
+    print(f"TT: {ell_lims['lmin_TT']} - {ell_lims['lmax_TT']}")
+    print(f"EE: {ell_lims['lmin_EE']} - {ell_lims['lmax_EE']}")
+    print(f"TE: {ell_lims['lmin_TE']} - {ell_lims['lmax_TE']}")
 
     all_ell_range = []
     if _is_mode["TT"]:
@@ -144,13 +132,13 @@ def create_cut_covmat(lkl_input):
         all_ell_range += [(ell, 'TE') for ell in _get_ell_vector("TE")]
     keep_ix_ell_range = []
     for ix, (l, m) in enumerate(all_ell_range):
-        if ell_lims[f'ell_min_{m}'] <= l <= ell_lims[f'ell_max_{m}']:
+        if ell_lims[f'lmin_{m}'] <= l <= ell_lims[f'lmax_{m}']:
             keep_ix_ell_range.append(ix)
 
     partial_icov_fname = "data/icov_PR4_v4.2_TTTEEE"
-    partial_icov_fname += f"_TT-{ell_lims['ell_min_TT']}-{ell_lims['ell_max_TT']}"
-    partial_icov_fname += f"_EE-{ell_lims['ell_min_EE']}-{ell_lims['ell_max_EE']}"
-    partial_icov_fname += f"_TE-{ell_lims['ell_min_TE']}-{ell_lims['ell_max_TE']}"
+    partial_icov_fname += f"_TT-{ell_lims['lmin_TT']}-{ell_lims['lmax_TT']}"
+    partial_icov_fname += f"_EE-{ell_lims['lmin_EE']}-{ell_lims['lmax_EE']}"
+    partial_icov_fname += f"_TE-{ell_lims['lmin_TE']}-{ell_lims['lmax_TE']}"
     partial_icov_fname += ".npy"
     partial_icov_fname = os.path.join(data_folder, partial_icov_fname)
 
