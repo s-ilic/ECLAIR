@@ -398,9 +398,18 @@ if (__name__ == "__main__") & (not ini["debug_mode"]):
                             blobs.view(dtype=np.float64).reshape(n_walkers, -1),
                         ))
                     )
-            # Print then increase MCMC counter
-            print(f"Current step: {ct+1} of {n_steps}")
+            # Print then increase MCMC counter, and print total/per step times
+            new_time = time()
+            to_print = f"Current step: {ct+1} of {n_steps}"
+            if ct == 0:
+                start_time = old_time = time()
+            else:
+                to_print += f", took {new_time-old_time:.3f} s, "
+                to_print += f"average time per step since start = "
+                to_print += f"{(new_time-start_time)/ct:.3f} s"
+            print(to_print)
             ct += 1
+            old_time = time()
         # Rescale loglikes to account for temperature change
         if ix < (len(ini['temperature'])-1):
             old_T = ini["temperature"][ix][0]
