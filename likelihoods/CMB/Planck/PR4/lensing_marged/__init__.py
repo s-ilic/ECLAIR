@@ -571,12 +571,27 @@ class BinWindows:
                 cls[:, ix_out] += np.dot(self.binning_matrix[i, :, :], cl.CL)
         return cls
 
+# def last_top_comment(fname):
+#     result = None
+#     with open(fname, encoding="utf-8-sig") as f:
+#         while x := f.readline():
+#             if x := x.strip():
+#                 if x[0] != '#':
+#                     return result
+#                 result = x[1:].strip()
+#     return None
+
+# New version of last_top_comment to avoid using walrus operator
+# and to be compatible with Python 3.6+
 def last_top_comment(fname):
     result = None
     with open(fname, encoding="utf-8-sig") as f:
-        while x := f.readline():
-            if x := x.strip():
-                if x[0] != '#':
+        line = f.readline()
+        while line:
+            stripped = line.strip()
+            if stripped:
+                if stripped[0] != '#':
                     return result
-                result = x[1:].strip()
+                result = stripped[1:].strip()
+            line = f.readline()
     return None
