@@ -228,7 +228,19 @@ parser.add_argument(
     '-ps',
     '--print-summary',
     action='store_true',
-    help='Outputs some summary statistics.'
+    help='Outputs some summary statistics for each mcmc and derived\n'
+         'parameter, including mean, median, standard deviation, and\n'
+         '68% quantile.\n'
+)
+
+parser.add_argument(
+    '-gr',
+    '--gelman-rubin',
+    metavar='N',
+    action='store',
+    nargs=1,
+    help='Splits the chain into N pieces and computes the generalised\n'
+         'Gelman-Rubin convergence statistic over them.\n'
 )
 
 args = parser.parse_args()
@@ -237,6 +249,10 @@ args = parser.parse_args()
 ################################
 ### Checking input arguments ###
 ################################
+
+print("############################################")
+print("############## Input warnings ##############")
+print("############################################\n")
 
 # Check input chain path
 if not os.path.isfile(args.file[0]):
@@ -400,6 +416,14 @@ if args.dict_labels is not None:
             else:
                 raise ValueError("Formatting error in labels names dictionary:\n%s" % line)
 
+if args.gelman_rubin is not None:
+    if not is_number(args.gelman_rubin[0]):
+        raise ValueError("Input Gelman-Rubin number of splits is not a number (%s)" % args.gelman_rubin[0])
+    elif int(args.gelman_rubin[0]) < 1:
+        raise ValueError("Input Gelman-Rubin number of splits is < 1 (%s)" % args.gelman_rubin[0])
+    else:
+        n_gr = int(args.gelman_rubin[0])
+
 
 #################################
 ### Reading and parsing chain ###
@@ -431,12 +455,20 @@ n_steps = ln.shape[0]
 
 # Parameter printing, if requested
 if args.show_parameters:
+    print("\n\n###########################################")
+    print("############# Parameter names #############")
+    print("###########################################\n")
+
     print("MCMC parameters:")
     for ix, n in enumerate(par_names):
         print(f"- {ix} = {n}")
-    print("Derived parameters:")
+    print("\nDerived parameters:")
     for ix, n in enumerate(blobs_names):
         print(f"- {ix} = {n}")
+
+print("\n\n############################################")
+print("############## Chain settings ##############")
+print("############################################\n")
 
 # Read priors
 lbs = np.array([par[3] for par in ini['var_par']])
@@ -587,8 +619,13 @@ def IAT(samples, c=5.0, norm=True):
 ### Produce summary statistics ###
 ##################################
 
+if args.print_summary or (args.gelman_rubin is not None):
+    print("\n\n##########################################")
+    print("########### Summary statistics ###########")
+    print("##########################################\n")
+
+
 if args.print_summary:
-    print(">>> Summary statistics:")
     print("MCMC parameters:")
     for ix, n in enumerate(par_names):
         iat = IAT(ch[:, :, ix])
@@ -597,9 +634,9 @@ if args.print_summary:
         med = np.median(ch[:, :, ix])
         q1 = np.percentile(ch[:, :, ix], 16)
         q2 = np.percentile(ch[:, :, ix], 84)
-        print(f"- {n}: {iat:.2f} (IAT), {mean:.3f} (mean), {std:.3f} (std), "
-              f"{med:.3f} (median), [{q1:.3f}, {q2:.3f}] (68% CI)")
-    print("Derived parameters:")
+        print(f"- {n}: {iat:.1f} (IAT), {mean:.3g} (mean), {std:.3g} (std), "
+              f"{med:.3g} (median), [{q1:.3g}, {q2:.3g}] (68% quantile)")
+    print("\nDerived parameters:")
     for ix, n in enumerate(blobs_names):
         iat = IAT(bl[:, :, ix])
         mean = np.mean(bl[:, :, ix])
@@ -607,8 +644,22 @@ if args.print_summary:
         med = np.median(bl[:, :, ix])
         q1 = np.percentile(bl[:, :, ix], 16)
         q2 = np.percentile(bl[:, :, ix], 84)
-        print(f"- {n}: {iat:.2f} (IAT), {mean:.3f} (mean), {std:.3f} (std), "
-              f"{med:.3f} (median), [{q1:.3f}, {q2:.3f}] (68% CI)")
+        print(f"- {n}: {iat:.1f} (IAT), {mean:.3g} (mean), {std:.3g} (std), "
+              f"{med:.3g} (median), [{q1:.3g}, {q2:.3g}] (68% quantile)")
+
+if args.gelman_rubin is not None:
+    print("\nComputing Gelman-Rubin convergence statistic...")
+    pieces_edges = np.linspace(0, n_steps, n_gr+1).astype("int")
+    pieces = [ch[pieces_edges[i]:pieces_edges[i+1], :, :]
+              for i in range(n_gr)]
+    pieces_mean = np.array([np.mean(piece, axis=(0,1)) for piece in pieces])
+    pieces_total_mean = np.mean(ch, axis=(0,1))
+    pieces_cov_mean = np.cov(pieces_mean, rowvar=False)
+    pieces_cov = np.array([np.cov(piece.reshape(-1, n_par), rowvar=False) for piece in pieces])
+    pieces_mean_cov = (1./n_steps * (pieces_edges[1:] - pieces_edges[:-1])[:, None, None] * pieces_cov).sum(axis=0)
+    Lm1_gr = np.linalg.inv(np.linalg.cholesky(pieces_mean_cov))
+    D_gr = np.linalg.eigvalsh(Lm1_gr @ pieces_cov_mean @ Lm1_gr.T)
+    print(f">>> Split generalised R-1 Gelman-Rubin statistic: {np.max(D_gr):.3g}")
 
 
 #####################
@@ -616,6 +667,11 @@ if args.print_summary:
 #####################
 
 figs = []
+
+if len(plot) != 0:
+    print("\n###########################################")
+    print("############# Preparing plots #############")
+    print("###########################################\n")
 
 # Likelihood plot
 if 1 in plot:
