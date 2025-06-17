@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from scipy.linalg.lapack import dtrtri
 from ECLAIR_tools import *
 from itertools import product
 import matplotlib.pyplot as plt
@@ -438,6 +439,7 @@ ini = parse_ini_file(ini_fname, silent_mode=True)
 par_names = np.array([dvn[par[1]] if par[1] in dvn.keys() else par[1]
                       for par in ini['var_par']])
 par_labels = np.array([dl[pn] if pn in dl.keys() else pn for pn in par_names])
+par_types = np.array([par[0] for par in ini['var_par']])
 n_par = len(ini['var_par'])
 n_walkers = ini['n_walkers']
 with open(fname, 'r') as f:
@@ -507,12 +509,14 @@ if sum(g) == 0:
     ch = ch[:, :, []]
     par_names = par_names[[]]
     par_labels = par_labels[[]]
+    par_types = par_types[[]]
     lbs = lbs[[]]
     ubs = ubs[[]]
 else:
     ch = ch[:, :, keep[g]]
     par_names = par_names[keep[g]]
     par_labels = par_labels[keep[g]]
+    par_types = par_types[keep[g]]
     lbs = lbs[keep[g]]
     ubs = ubs[keep[g]]
 print('>>> Total number of MCMC parameters kept : %s (out of %s)' % (ch.shape[2], n_par))
@@ -649,18 +653,50 @@ if args.print_summary:
 
 if args.gelman_rubin is not None:
     print("\nComputing Gelman-Rubin convergence statistic...")
-    pieces_edges = np.linspace(0, n_steps, n_gr+1).astype("int")
-    pieces = [ch[pieces_edges[i]:pieces_edges[i+1], :, :]
-              for i in range(n_gr)]
-    pieces_mean = np.array([np.mean(piece, axis=(0,1)) for piece in pieces])
-    pieces_total_mean = np.mean(ch, axis=(0,1))
-    pieces_cov_mean = np.cov(pieces_mean, rowvar=False)
-    pieces_cov = np.array([np.cov(piece.reshape(-1, n_par), rowvar=False) for piece in pieces])
-    pieces_mean_cov = (1./n_steps * (pieces_edges[1:] - pieces_edges[:-1])[:, None, None] * pieces_cov).sum(axis=0)
-    Lm1_gr = np.linalg.inv(np.linalg.cholesky(pieces_mean_cov))
-    D_gr = np.linalg.eigvalsh(Lm1_gr @ pieces_cov_mean @ Lm1_gr.T)
-    print(f">>> Split generalised R-1 Gelman-Rubin statistic: {np.max(D_gr):.3g}")
 
+    # Generalised multivarate R-1 Gelman-Rubin statistic
+    print(f"\nSplit (N={n_gr}) R-1 Gelman-Rubin statistic:")
+    to_dos = [
+        "CLASS parameters only:   ",
+        "nuisance parameters only:",
+        "all parameters:          ",
+    ]
+    ix_to_do = [
+        np.where(par_types == "var_class")[0],
+        np.where(par_types == "var")[0],
+        np.arange(n_par),
+    ]
+    n_samples_per_piece = (n_steps // n_gr * n_gr) * n_walkers
+    n_char_max = max([len(par_name) for par_name in par_names]) + 1
+    for ix, todo in zip(ix_to_do, to_dos):
+
+        if len(ix) == 0:
+            print(f"- {todo} no parameters to compute R-1 for")
+            continue
+
+        pieces = np.split(ch[n_steps%n_gr:, :, ix], n_gr, axis=0)
+        pieces_mean = np.array([np.mean(piece, axis=(0,1)) for piece in pieces])
+        pieces_total_mean = np.mean(ch[n_steps%n_gr:, :, ix], axis=(0,1))
+        pieces_cov_mean = np.cov(pieces_mean, rowvar=False)
+        pieces_cov = np.array([np.cov(piece.reshape(-1, piece.shape[2]), rowvar=False) for piece in pieces])
+        pieces_mean_cov = pieces_cov.mean(axis=0)
+
+        dg = np.sqrt(np.diag(pieces_cov_mean))
+        pieces_corr_mean = (pieces_cov_mean / dg).T / dg
+        pieces_norm_mean_cov = (pieces_mean_cov / dg).T / dg
+
+        cho = np.linalg.cholesky(pieces_norm_mean_cov)
+        Linv = dtrtri(cho, lower=True)[0]
+        eigvals = np.linalg.eigvalsh(Linv.dot(pieces_corr_mean).dot(Linv.T))
+        Rminus1 = max(np.abs(eigvals))
+        print(f"- {todo} R-1 = {np.max(Rminus1):.3g}")
+
+    # Univariate R-1 Gelman-Rubin statistics
+    print(f"\nSplit (N={n_gr}) Gelman-Rubin sqrt(var(chain mean)/mean(chain var)) test for individual parameters:")
+    for i in range(n_par):
+        R_hat = np.sqrt(pieces_cov_mean[i, i] / pieces_mean_cov[i, i])
+        pname = par_names[i] + ":" if len(par_names) > i else f"par_{i}"
+        print(f"- {pname.ljust(n_char_max)} {R_hat:.3g}")
 
 #####################
 ### Produce plots ###
