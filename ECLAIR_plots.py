@@ -652,7 +652,7 @@ if args.print_summary:
               f"{med:.3g} (median), [{q1:.3g}, {q2:.3g}] (68% quantile)")
 
 if args.gelman_rubin is not None:
-    print("\nComputing Gelman-Rubin convergence statistic...")
+    print("\nComputing convergence statistics...")
 
     # Generalised multivarate R-1 Gelman-Rubin statistic
     print(f"\nSplit (N={n_gr}) R-1 Gelman-Rubin statistic:")
@@ -693,10 +693,10 @@ if args.gelman_rubin is not None:
 
     # Univariate R-1 Gelman-Rubin statistics
     print(f"\nSplit (N={n_gr}) Gelman-Rubin sqrt(var(chain mean)/mean(chain var)) test for individual parameters:")
-    for i in range(n_par):
-        R_hat = np.sqrt(pieces_cov_mean[i, i] / pieces_mean_cov[i, i])
-        pname = par_names[i] + ":" if len(par_names) > i else f"par_{i}"
-        print(f"- {pname.ljust(n_char_max)} {R_hat:.3g}")
+    R_hat = np.sqrt(np.diag(pieces_cov_mean) / np.diag(pieces_mean_cov))
+    for i in np.argsort(R_hat)[::-1]:
+        pname = par_names[i] + ":"
+        print(f"- {pname.ljust(n_char_max)} {R_hat[i]:.3g}")
 
 #####################
 ### Produce plots ###
