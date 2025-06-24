@@ -240,8 +240,9 @@ parser.add_argument(
     metavar='N',
     action='store',
     nargs=1,
-    help='Splits the chain into N pieces and computes the generalised\n'
-         'Gelman-Rubin convergence statistic over them.\n'
+    help='Splits the chain into N pieces and computes across them a generalised\n'
+         'Gelman-Rubin convergence statistic and a sqrt(var(pieces_mean)/mean(pieces_var))\n'
+         'test for individual parameters.\n'
 )
 
 args = parser.parse_args()
