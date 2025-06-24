@@ -231,7 +231,7 @@ parser.add_argument(
     action='store_true',
     help='Outputs some summary statistics for each mcmc and derived\n'
          'parameter, including mean, median, standard deviation, and\n'
-         '68% quantile.\n'
+         '68%% quantile.\n'
 )
 
 parser.add_argument(
