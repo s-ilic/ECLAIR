@@ -193,12 +193,9 @@ elif ini["parallel"][0] == "multiprocessing":
     from multiprocessing import Pool
     n_threads = int(ini["parallel"][1]) # number of threads chosen by user
     pool = Pool(n_threads)
-# MPI parallel computing via external schwimmbad module or zeus built-in MPIPool
+# MPI parallel computing via external schwimmbad module
 elif ini["parallel"][0] == "MPI":
-    if which_sampler == "zeus":
-        from zeus.parallel import MPIPool
-    else:
-        from schwimmbad import MPIPool
+    from schwimmbad import MPIPool
     pool = MPIPool()
     if not pool.is_master(): # Necessary bit for MPI
         pool.wait()
