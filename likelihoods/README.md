@@ -102,6 +102,9 @@ Union3 & UNITY1.5 type Ia supernovae sample from Rubin et al. ([arXiv:2311.12098
 Pantheon+ (without SH0ES) type Ia supernovae sample from Brout et al. ([arXiv:
 2202.04077](https://arxiv.org/abs/2202.04077))
 
+##### "BG.SN.DES_Dovekie":
+Re-analysis of the Dark Energy Survey Year 5 (DES-Y5) type Ia supernovae sample from DES Collaboration ([arXiv:2511.07517](https://arxiv.org/abs/2511.07517))
+
 -------------
 
 ### 2) Cosmic microwave background measurements
@@ -193,3 +196,9 @@ Bicep/KECK 2021 likelihood corresponding to data release named BK18 ([arXiv:2110
 
 ##### "CMB.SPT.SPT3G_2020":
 SPT 3G likelihood from Dutcher et al. ([arXiv:2101.01684](https://arxiv.org/abs/2101.01684))
+
+##### "CMB.SPT.SPT3G_D1_TnE":
+SPT 3G D1 Release temperature and E-mode polarisation likelihood from SPT Collaboration ([arXiv:2506.20707](https://arxiv.org/abs/2506.20707))
+
+##### "CMB.SPT.SPT3G_D1_TnE_lite":
+SPT 3G D1 Release temperature and E-mode polarisation likelihood from SPT Collaboration ([arXiv:2506.20707](https://arxiv.org/abs/2506.20707)), in its "lite" version, i.e. foreground-marginalized
