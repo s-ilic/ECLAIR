@@ -8,7 +8,7 @@ import spt_candl_data
 class likelihood:
     def __init__(self, lkl_input):
 
-        self.candl_like = candl.Like(spt_candl_data.SPT3G_D1_TnE, variant="lite")
+        self.candl_like = candl.Like(spt_candl_data.SPT3G_D1_TnE, priors=[], variant="lite")
 
     def get_loglike(self, class_input, lkl_input, class_run):
 
