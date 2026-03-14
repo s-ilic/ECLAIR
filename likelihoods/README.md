@@ -137,6 +137,9 @@ Planck Public Data Release 3 ([arXiv:1907.12875](https://arxiv.org/abs/1907.1287
 - **"CMB.Planck.PR3.lensCMBdep"**: lensing likelihood, using T and P map-based lensing reconstruction, with model-dependent correction
 - **"CMB.Planck.PR3.lensCMBmarg"**: lensing likelihood, using T and P map-based lensing reconstruction, marginalized over CMB power spectrum
 
+Available alternative likelihoods using the `clipy` python package (easier to install) instead of `clik` (same name as above but with the suffix `_clipy`)
+- **"CMB.Planck.PR3.lowTT_clipy"**
+
 ##### "PR4":
 
 Likelihoods derived from Planck Public Data Release 4
