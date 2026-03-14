@@ -631,26 +631,45 @@ if args.print_summary or (args.gelman_rubin is not None):
 
 
 if args.print_summary:
-    print("MCMC parameters:")
-    for ix, n in enumerate(par_names):
-        iat = IAT(ch[:, :, ix])
-        mean = np.mean(ch[:, :, ix])
-        std = np.std(ch[:, :, ix])
-        med = np.median(ch[:, :, ix])
-        q1 = np.percentile(ch[:, :, ix], 16)
-        q2 = np.percentile(ch[:, :, ix], 84)
-        print(f"- {n}: {iat:.1f} (IAT), {mean:.3g} (mean), {std:.3g} (std), "
-              f"{med:.3g} (median), [{q1:.3g}, {q2:.3g}] (68% quantile)")
-    print("\nDerived parameters:")
-    for ix, n in enumerate(blobs_names):
-        iat = IAT(bl[:, :, ix])
-        mean = np.mean(bl[:, :, ix])
-        std = np.std(bl[:, :, ix])
-        med = np.median(bl[:, :, ix])
-        q1 = np.percentile(bl[:, :, ix], 16)
-        q2 = np.percentile(bl[:, :, ix], 84)
-        print(f"- {n}: {iat:.1f} (IAT), {mean:.3g} (mean), {std:.3g} (std), "
-              f"{med:.3g} (median), [{q1:.3g}, {q2:.3g}] (68% quantile)")
+    # MCMC parameters table
+    if len(par_names) > 0:
+        print("MCMC parameters:")
+        mcmc_data = []
+        for ix, n in enumerate(par_names):
+            iat = IAT(ch[:, :, ix])
+            mean = np.mean(ch[:, :, ix])
+            std = np.std(ch[:, :, ix])
+            med = np.median(ch[:, :, ix])
+            q1 = np.percentile(ch[:, :, ix], 16)
+            q2 = np.percentile(ch[:, :, ix], 84)
+            mcmc_data.append([n, iat, mean, std, med, q1, q2])
+        max_name_len = max(len(row[0]) for row in mcmc_data)
+        header = f"{'Parameter'.ljust(max_name_len)} {'IAT'.rjust(6)} {'Mean'.rjust(10)} {'Std'.rjust(10)} {'Median'.rjust(10)} {'16%'.rjust(10)} {'84%'.rjust(10)}"
+        print(header)
+        print("-" * len(header))
+        for row in mcmc_data:
+            print(f"{row[0].ljust(max_name_len)} {row[1]:>6.1f} {row[2]:>10.3g} {row[3]:>10.3g} {row[4]:>10.3g} {row[5]:>10.3g} {row[6]:>10.3g}")
+        print()
+
+    # Derived parameters table
+    if len(blobs_names) > 0:
+        print("Derived parameters:")
+        derived_data = []
+        for ix, n in enumerate(blobs_names):
+            iat = IAT(bl[:, :, ix])
+            mean = np.mean(bl[:, :, ix])
+            std = np.std(bl[:, :, ix])
+            med = np.median(bl[:, :, ix])
+            q1 = np.percentile(bl[:, :, ix], 16)
+            q2 = np.percentile(bl[:, :, ix], 84)
+            derived_data.append([n, iat, mean, std, med, q1, q2])
+        max_name_len = max(len(row[0]) for row in derived_data)
+        header = f"{'Parameter'.ljust(max_name_len)} {'IAT'.rjust(6)} {'Mean'.rjust(10)} {'Std'.rjust(10)} {'Median'.rjust(10)} {'16%'.rjust(10)} {'84%'.rjust(10)}"
+        print(header)
+        print("-" * len(header))
+        for row in derived_data:
+            print(f"{row[0].ljust(max_name_len)} {row[1]:>6.1f} {row[2]:>10.3g} {row[3]:>10.3g} {row[4]:>10.3g} {row[5]:>10.3g} {row[6]:>10.3g}")
+        print()
 
 if args.gelman_rubin is not None:
     print("\nComputing convergence statistics...")
