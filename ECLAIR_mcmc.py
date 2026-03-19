@@ -196,6 +196,7 @@ elif ini["parallel"][0] == "multiprocessing":
 # MPI parallel computing via external schwimmbad module
 elif ini["parallel"][0] == "MPI":
     from schwimmbad import MPIPool
+from datetime import datetime
     pool = MPIPool()
     if not pool.is_master(): # Necessary bit for MPI
         pool.wait()
@@ -400,12 +401,13 @@ if (__name__ == "__main__") & (not ini["debug_mode"]):
                     )
             # Print then increase MCMC counter, and print total/per step times
             new_time = time()
-            to_print = f"Current step: {ct+1} of {n_steps}"
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            to_print = f"[{timestamp}] Step: {ct+1}/{n_steps}"
             if ct == 0:
                 start_time = old_time = time()
             else:
                 to_print += f", took {new_time-old_time:.3f} s, "
-                to_print += f"average time per step since start = "
+                to_print += f"avg. time/step = "
                 to_print += f"{(new_time-start_time)/ct:.3f} s"
             print(to_print)
             ct += 1
