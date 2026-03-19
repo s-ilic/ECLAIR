@@ -3,6 +3,7 @@ import ECLAIR_tools
 import numpy as np
 from scipy.stats import truncnorm
 from time import time
+from datetime import datetime
 
 
 ### Parse input ini file
@@ -196,7 +197,6 @@ elif ini["parallel"][0] == "multiprocessing":
 # MPI parallel computing via external schwimmbad module
 elif ini["parallel"][0] == "MPI":
     from schwimmbad import MPIPool
-from datetime import datetime
     pool = MPIPool()
     if not pool.is_master(): # Necessary bit for MPI
         pool.wait()
