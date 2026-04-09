@@ -561,6 +561,7 @@ if args.output_getdist:
         f.write("Burn-in = %s\n" % burn)
         f.write("Sample thinning = %s\n" % thin)
         f.write("Walker thinning = %s\n" % thinw)
+    print("GetDist-formatted chain saved as %s_gdist.txt" % ini_fname_nosuffix)
 
 
 ######################
